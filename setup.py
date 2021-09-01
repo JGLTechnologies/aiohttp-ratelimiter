@@ -28,5 +28,5 @@ setup(
     classifiers=classifiers,
     keywords="discord",
     packages=find_packages(),
-    install_requires=["aiohttp", "aioitertools"],
+    install_requires=["aiohttp", "git+https://github.com/Nebulizer1213/aiohttp-ratelimiter"],
 )

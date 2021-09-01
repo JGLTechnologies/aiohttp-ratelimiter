@@ -57,9 +57,7 @@ class RateLimitDecorator(object):
 
 
 async def default_keyfunc(request):
-    if x := request.headers.get("X-Forwarded-For") is not None:
-        return x
-    return request.remote
+    return request.headers.get("X-Forwarded-For") or request.remote
 
 """
 app = web.Application()
