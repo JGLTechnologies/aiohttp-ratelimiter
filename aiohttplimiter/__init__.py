@@ -1,4 +1,3 @@
-from aiohttplimiter import RateLimitDecorator
-from aiohttplimiter.decorators import default_keyfunc
+from .decorators import RateLimitDecorator, default_keyfunc
 
 limit = RateLimitDecorator
