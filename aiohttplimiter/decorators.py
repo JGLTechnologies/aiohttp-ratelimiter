@@ -14,7 +14,8 @@ def now():
 
 
 class RateLimitDecorator(object):
-    def __init__(self, keyfunc, ratelimit: str):
+    def __init__(self, keyfunc, ratelimit: str, exempt_ips: set = None):
+        self.exempt_ips = exempt_ips if exempt_ips is not None else set()
         calls, period = ratelimit.split("/")
         calls = int(calls)
         period = int(period)
@@ -30,8 +31,9 @@ class RateLimitDecorator(object):
     def __call__(self, func):
         @wraps(func)
         async def wrapper(request):
+            if await self.keyfunc(request) in self.exempt_ips:
+                return await func(request)
             self.request = request
-            print(await self.__period_remaining(request))
             if await self.__period_remaining(request) <= 0:
                 try:
                     self.num_calls[await self.keyfunc(request)] = 0
@@ -59,7 +61,9 @@ class RateLimitDecorator(object):
 
 
 async def default_keyfunc(request):
-    return request.headers.get("X-Forwarded-For") or request.remote
+    ip = request.headers.get("X-Forwarded-For") or request.remote or "127.0.0.1"
+    ip = (await aiotools.run_func_async(ip.split, [","]))[0]
+    return ip
 
 """
 app = web.Application()

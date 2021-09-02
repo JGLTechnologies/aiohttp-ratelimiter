@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 1.0.5
+Version: 1.0.6
 Summary: A simple ratelimiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aio-tools
 Author: George Luca
@@ -40,6 +40,28 @@ Description: <a href="https://jgltechnologies.com/discord">
         # This endpoint can only be requested one time per second per IP address.
         @routes.get("/")
         @limit(ratelimit="1/1", keyfunc=default_keyfunc)
+        async def test(request):
+            return web.Response(text="test")
+        
+        app.add_routes(routes)
+        web.run_app(app)
+        ```
+        
+        <br>
+        
+        You can exempt an IP from ratelimiting using the exempt_ips kwarg.
+        
+        ```python
+        from aiohttplimiter import limit, default_keyfunc
+        from aiohttp import web
+        
+        app = web.Application()
+        routes = web.RouteTableDef()
+        
+        # 192.168.1.245 is exempt from ratelimiting.
+        # Keep in mind that exempt_ips takes a set not a list.
+        @routes.get("/")
+        @limit(ratelimit="1/1", keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
         async def test(request):
             return web.Response(text="test")
         

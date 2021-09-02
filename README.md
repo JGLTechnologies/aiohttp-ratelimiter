@@ -39,5 +39,27 @@ app.add_routes(routes)
 web.run_app(app)
 ```
 
+<br>
+
+You can exempt an IP from ratelimiting using the exempt_ips kwarg.
+
+```python
+from aiohttplimiter import limit, default_keyfunc
+from aiohttp import web
+
+app = web.Application()
+routes = web.RouteTableDef()
+
+# 192.168.1.245 is exempt from ratelimiting.
+# Keep in mind that exempt_ips takes a set not a list.
+@routes.get("/")
+@limit(ratelimit="1/1", keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
+async def test(request):
+    return web.Response(text="test")
+
+app.add_routes(routes)
+web.run_app(app)
+```
+
 
 
