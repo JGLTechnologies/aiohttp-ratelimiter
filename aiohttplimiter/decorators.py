@@ -1,3 +1,4 @@
+import asyncio
 from functools import wraps
 from math import floor
 import time
@@ -13,10 +14,11 @@ def now():
 
 
 class RateLimitDecorator(object):
-    def __init__(self, keyfunc, ratelimit: str):
+    def __init__(self, keyfunc, ratelimit: str, sleep_while_limited: bool = False):
         calls, period = ratelimit.split("/")
         calls = int(calls)
         period = int(period)
+        self.sleep_while_limited = sleep_while_limited
         self.clamped_calls = defaultdict(
             lambda: max(1, min(sys.maxsize, floor(calls))))
         self.period = period
@@ -41,7 +43,9 @@ class RateLimitDecorator(object):
             self.num_calls[await self.keyfunc(self.request)] += 1
 
             if self.num_calls[await self.keyfunc(self.request)] > self.clamped_calls[await self.keyfunc(self.request)]:
-                return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} seconds'}), content_type="application/json", status=429)
+                if not self.sleep_while_limited:
+                    return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} seconds'}), content_type="application/json", status=429)
+                await asyncio.sleep(await self.__period_remaining(request))
 
             return await func(request)
         return wrapper
