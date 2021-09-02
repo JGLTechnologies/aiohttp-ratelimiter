@@ -23,7 +23,7 @@ python -m pip install aiohttp-ratelimiter
 Example
 
 ```python
-from aiohttplimiter import limit
+from aiohttplimiter import limit, default_keyfunc
 from aiohttp import web
 
 app = web.Application()
