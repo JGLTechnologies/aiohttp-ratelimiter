@@ -44,7 +44,7 @@ class RateLimitDecorator(object):
 
             if self.num_calls[await self.keyfunc(self.request)] > self.clamped_calls[await self.keyfunc(self.request)]:
                 if not self.sleep_while_limited:
-                    return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} seconds'}), content_type="application/json", status=429)
+                    return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
                 await asyncio.sleep(await self.__period_remaining(request))
 
             return await func(request)
