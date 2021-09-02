@@ -31,17 +31,18 @@ class RateLimitDecorator(object):
         @wraps(func)
         async def wrapper(request):
             self.request = request
+            print(await self.__period_remaining(request))
             if await self.__period_remaining(request) <= 0:
                 try:
-                    self.num_calls[await self.keyfunc(self.request)] = 0
-                    self.last_reset[await self.keyfunc(self.request)] = await aiotools.run_func_async(now)
+                    self.num_calls[await self.keyfunc(request)] = 0
+                    self.last_reset[await self.keyfunc(request)] = await aiotools.run_func_async(now)
                 except MemoryError:
-                    self.num_calls[await self.keyfunc(self.request)] = 0
-                    self.last_reset[await self.keyfunc(self.request)] = await aiotools.run_func_async(now)
+                    self.num_calls[await self.keyfunc(request)] = 0
+                    self.last_reset[await self.keyfunc(request)] = await aiotools.run_func_async(now)
 
-            self.num_calls[await self.keyfunc(self.request)] += 1
+            self.num_calls[await self.keyfunc(request)] += 1
 
-            if self.num_calls[await self.keyfunc(self.request)] > self.clamped_calls[await self.keyfunc(self.request)]:
+            if self.num_calls[await self.keyfunc(request)] > self.clamped_calls[await self.keyfunc(request)]:
                 return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
 
             return await func(request)
