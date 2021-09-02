@@ -1,8 +1,8 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 1.0.6
+Version: 2.0.0
 Summary: A simple ratelimiter for aiohttp.web
-Home-page: https://github.com/Nebulizer1213/aio-tools
+Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
 Author-email: fixingg@gmail.com
 License: MIT
@@ -72,7 +72,6 @@ Description: <a href="https://jgltechnologies.com/discord">
         
         
         
-Keywords: discord
 Platform: UNKNOWN
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers

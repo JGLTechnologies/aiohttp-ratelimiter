@@ -6,7 +6,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "1.0.6"
+VERSION = "2.0.0"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -21,12 +21,12 @@ setup(
     description="A simple ratelimiter for aiohttp.web",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/Nebulizer1213/aio-tools",
+    url="https://github.com/Nebulizer1213/aiohttp-ratelimiter",
     author="George Luca",
     author_email="fixingg@gmail.com",
     license="MIT",
     classifiers=classifiers,
-    keywords="discord",
+    keywords="",
     packages=find_packages(),
     install_requires=["aiohttp",],
     dependency_links=["https://github.com/Nebulizer1213/aiohttp-ratelimiter"]
