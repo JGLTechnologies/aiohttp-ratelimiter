@@ -39,25 +39,5 @@ app.add_routes(routes)
 web.run_app(app)
 ```
 
-<br>
-
-If you want to sleep until the ratelimit is over instead of throwing a 429 exception you can set sleep_while_limited to True.
-
-```python
-from aiohttplimiter import limit, default_keyfunc
-from aiohttp import web
-
-app = web.Application()
-routes = web.RouteTableDef()
-
-@routes.get("/")
-@limit(ratelimit="1/1", keyfunc=default_keyfunc, sleep_while_limited=True)
-async def test(request):
-    return web.Response(text="test")
-
-app.add_routes(routes)
-web.run_app(app)
-```
-
 
 
