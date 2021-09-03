@@ -9,8 +9,7 @@ from aiohttp import web
 import json
 
 
-def now():
-    return time.monotonic() if hasattr(time, 'monotonic') else time.time()
+now = lambda: time.monotonic() if hasattr(time, 'monotonic') else time.time()
 
 
 class RateLimitDecorator(object):
@@ -19,8 +18,7 @@ class RateLimitDecorator(object):
         calls, period = ratelimit.split("/")
         calls = int(calls)
         period = int(period)
-        self.clamped_calls = defaultdict(
-            lambda: max(1, min(sys.maxsize, floor(calls))))
+        self.clamped_calls = defaultdict(lambda: calls)
         self.period = period
         self.raise_on_limit = True
         self.keyfunc = keyfunc
@@ -61,7 +59,8 @@ class RateLimitDecorator(object):
 
 
 async def default_keyfunc(request):
-    ip = request.headers.get("X-Forwarded-For") or request.remote or "127.0.0.1"
+    ip = request.headers.get(
+        "X-Forwarded-For") or request.remote or "127.0.0.1"
     ip = (await aiotools.run_func_async(ip.split, [","]))[0]
     return ip
 
