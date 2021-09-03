@@ -18,7 +18,6 @@ class RateLimitDecorator(object):
         calls, period = ratelimit.split("/")
         calls = int(calls)
         period = int(period)
-        self.clamped_calls = defaultdict(lambda: calls)
         self.period = period
         self.raise_on_limit = True
         self.keyfunc = keyfunc
@@ -42,7 +41,7 @@ class RateLimitDecorator(object):
 
             self.num_calls[await self.keyfunc(request)] += 1
 
-            if self.num_calls[await self.keyfunc(request)] > self.clamped_calls[await self.keyfunc(request)]:
+            if self.num_calls[await self.keyfunc(request)] > self.calls:
                 return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
 
             return await func(request)
