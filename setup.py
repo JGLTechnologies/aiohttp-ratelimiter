@@ -6,7 +6,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -29,5 +29,5 @@ setup(
     keywords="",
     packages=find_packages(),
     install_requires=["aiohttp",],
-    dependency_links=["https://github.com/Nebulizer1213/aiohttp-ratelimiter"]
+    dependency_links=["https://github.com/Nebulizer1213/aio-tools"]
 )
