@@ -1,9 +1,18 @@
 from functools import wraps
 import time
-import aiotools
 from collections import defaultdict
 from aiohttp import web
 import json
+from typing import Callable
+import asyncio
+import functools
+
+
+async def __run_func_async(func: Callable, args: list = None, loop: asyncio.AbstractEventLoop = None):
+    args = tuple(args) if args is not None else tuple()
+    loop = loop or asyncio.get_event_loop()
+    r = await loop.run_in_executor(None, functools.partial(func, *args))
+    return r
 
 
 now = lambda: time.monotonic() if hasattr(time, 'monotonic') else time.time()
@@ -35,10 +44,10 @@ class RateLimitDecorator(object):
             if await self.__period_remaining(request) <= 0:
                 try:
                     self.num_calls[key] = 0
-                    self.last_reset[key] = await aiotools.run_func_async(now)
+                    self.last_reset[key] = await __run_func_async(now)
                 except MemoryError:
                     self.num_calls[key] = 0
-                    self.last_reset[key] = await aiotools.run_func_async(now)
+                    self.last_reset[key] = await __run_func_async(now)
 
             # Increments the number of calls by 1
             self.num_calls[key] += 1
@@ -57,11 +66,11 @@ class RateLimitDecorator(object):
         """
         key = await self.keyfunc(request)
         try:
-            elapsed = await aiotools.run_func_async(now) - self.last_reset[key]
+            elapsed = await __run_func_async(now) - self.last_reset[key]
             return self.period - elapsed
         except MemoryError:
-            await aiotools.run_func_async(self.last_reset.clear)
-            elapsed = await aiotools.run_func_async(now) - self.last_reset[key]
+            await __run_func_async(self.last_reset.clear)
+            elapsed = await __run_func_async(now) - self.last_reset[key]
             return self.period - elapsed
 
 
@@ -71,7 +80,7 @@ async def default_keyfunc(request):
     """
     ip = request.headers.get(
         "X-Forwarded-For") or request.remote or "127.0.0.1"
-    ip = (await aiotools.run_func_async(ip.split, [","]))[0]
+    ip = (await __run_func_async(ip.split, [","]))[0]
     return ip
 
 """
