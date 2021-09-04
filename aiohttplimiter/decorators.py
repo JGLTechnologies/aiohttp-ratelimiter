@@ -25,25 +25,26 @@ class RateLimitDecorator(object):
     def __call__(self, func):
         @wraps(func)
         async def wrapper(request, *args, **kwargs):
+            key = await self.keyfunc(request)
 
             # Checks if the user's IP is in the set of exempt IPs
-            if await self.keyfunc(request) in self.exempt_ips:
+            if key in self.exempt_ips:
                 return await func(request)
 
             # Checks if it is time to reset the number of calls
             if await self.__period_remaining(request) <= 0:
                 try:
-                    self.num_calls[await self.keyfunc(request)] = 0
-                    self.last_reset[await self.keyfunc(request)] = await aiotools.run_func_async(now)
+                    self.num_calls[key] = 0
+                    self.last_reset[key] = await aiotools.run_func_async(now)
                 except MemoryError:
-                    self.num_calls[await self.keyfunc(request)] = 0
-                    self.last_reset[await self.keyfunc(request)] = await aiotools.run_func_async(now)
+                    self.num_calls[key] = 0
+                    self.last_reset[key] = await aiotools.run_func_async(now)
 
             # Increments the number of calls by 1
-            self.num_calls[await self.keyfunc(request)] += 1
+            self.num_calls[key] += 1
 
             # Returns a JSON response if the number of calls exceeds the max amount of calls
-            if self.num_calls[await self.keyfunc(request)] > self.calls:
+            if self.num_calls[key] > self.calls:
                 return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
 
             # Returns normal response if the user did not go over the ratelimit
@@ -54,12 +55,13 @@ class RateLimitDecorator(object):
         """
         Gets the ammount of time remaining until the number of calls resets
         """
+        key = await self.keyfunc(request)
         try:
-            elapsed = await aiotools.run_func_async(now) - self.last_reset[await self.keyfunc(request)]
+            elapsed = await aiotools.run_func_async(now) - self.last_reset[key]
             return self.period - elapsed
         except MemoryError:
             await aiotools.run_func_async(self.last_reset.clear)
-            elapsed = await aiotools.run_func_async(now) - self.last_reset[await self.keyfunc(request)]
+            elapsed = await aiotools.run_func_async(now) - self.last_reset[key]
             return self.period - elapsed
 
 
