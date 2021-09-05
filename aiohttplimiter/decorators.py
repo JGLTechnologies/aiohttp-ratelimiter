@@ -59,7 +59,7 @@ class RateLimitDecorator(object):
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
                 return await func(request, *args, **kwargs)
-            return func(*args, **kwargs)
+            return func(request, *args, **kwargs)
         return wrapper
 
     async def __period_remaining(self, request):
