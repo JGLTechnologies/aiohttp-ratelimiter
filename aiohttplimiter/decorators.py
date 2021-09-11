@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from aiohttp import web
 import json
-from typing import Callable
+from typing import Callable, Awaitable
 import asyncio
 import functools
 
@@ -18,9 +18,12 @@ async def run_func_async(func: Callable, args: list = None, loop: asyncio.Abstra
 now = lambda: time.monotonic() if hasattr(time, 'monotonic') else time.time()
 
 
-class RateLimitDecorator(object):
-    def __init__(self, keyfunc, ratelimit: str, exempt_ips: set = None):
-        self.exempt_ips = exempt_ips if exempt_ips is not None else set()
+class RateLimitDecorator:
+    """
+    Decorator to ratelimit requests in the aiohttp.web framework
+    """
+    def __init__(self, keyfunc: Awaitable, ratelimit: str, exempt_ips: set = None):
+        self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         calls = int(calls)
         period = int(period)
@@ -84,6 +87,30 @@ async def default_keyfunc(request):
         "X-Forwarded-For") or request.remote or "127.0.0.1"
     ip = (await run_func_async(ip.split, [","]))[0]
     return ip
+
+class Limiter:
+    """
+    This should be used if you plan on having the same settings for each endpoint
+
+    ```
+    limiter = Limiter(keyfunc=your_keyfunc, exempt_ips={"192.168.1.345"})
+
+    @routes.get("/")
+    @limiter.limit("5/1")
+    def foo():
+        return web.Response(text="Hello World")
+    ```
+    """
+    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None):
+        self.exempt_ips = exempt_ips or set()
+        self.keyfunc = keyfunc
+
+    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None):
+        def wrapper(func: Callable, *args, **kwargs):
+            _exempt_ips = exempt_ips or self.exempt_ips
+            _keyfunc = keyfunc or self.keyfunc
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips)(func)
+        return wrapper
 
 """
 app = web.Application()

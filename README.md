@@ -61,5 +61,27 @@ app.add_routes(routes)
 web.run_app(app)
 ```
 
+<br>
+
+If you plan on having the same keyfunc and exempt IPs for each endpoint using the Limiter class would be easier.
+
+```python
+from aiohttp import web
+from aiohttplimiter import default_keyfunc, Limiter
+
+app = web.Application()
+routes = web.RouteTableDef()
+
+limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"})
+
+@routes.get("/")
+@limiter.limit("1/5")
+def home(request):
+    return web.Response(text="test")
+
+app.add_routes(routes)
+web.run_app(app)
+```
+
 
 
