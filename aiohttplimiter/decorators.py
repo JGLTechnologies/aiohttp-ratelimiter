@@ -22,10 +22,11 @@ class RateLimitDecorator:
     """
     Decorator to ratelimit requests in the aiohttp.web framework
     """
-    def __init__(self, keyfunc: Awaitable, ratelimit: str, exempt_ips: set = None):
+    def __init__(self, keyfunc: Awaitable, ratelimit: str, exempt_ips: set = None, middleware_count: int = 0):
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
-        calls = int(calls)
+        self._calls = calls
+        calls = int(calls) + middleware_count
         period = int(period)
         self.period = period
         self.raise_on_limit = True
@@ -57,7 +58,7 @@ class RateLimitDecorator:
 
             # Returns a JSON response if the number of calls exceeds the max amount of calls
             if self.num_calls[key] > self.calls:
-                return web.Response(text=json.dumps({"Rate limit exceeded": f'{self.calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
+                return web.Response(text=json.dumps({"Rate limit exceeded": f'{self._calls} request(s) per {self.period} second(s)'}), content_type="application/json", status=429)
 
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
@@ -101,15 +102,17 @@ class Limiter:
         return web.Response(text="Hello World")
     ```
     """
-    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None):
+    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None, middleware_count: int = 0):
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
+        self.middleware_count = middleware_count
 
-    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None):
+    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None, middleware_count: int = None):
         def wrapper(func: Callable, *args, **kwargs):
+            _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
-            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips)(func)
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count)(func)
         return wrapper
 
 """

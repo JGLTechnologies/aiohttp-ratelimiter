@@ -83,5 +83,13 @@ app.add_routes(routes)
 web.run_app(app)
 ```
 
+<br>
+
+If you have any middlewares just specify the ammount in the middleware_count kwarg.
+
+```python
+limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"}, middleware_count=1)
+```
+
 
 
