@@ -29,7 +29,7 @@ class RateLimitDecorator:
 
     def __call__(self, func):
         @wraps(func)
-        async def wrapper(request, *args, **kwargs):
+        async def wrapper(request):
             key = await self.keyfunc(request)
 
             # Checks if the user's IP is in the set of exempt IPs
@@ -51,8 +51,8 @@ class RateLimitDecorator:
 
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
-                return await func(request, *args, **kwargs)
-            return func(request, *args, **kwargs)
+                return await func(request)
+            return func(request)
         return wrapper
 
     async def __period_remaining(self, request):
@@ -93,7 +93,7 @@ class Limiter:
         self.middleware_count = middleware_count
 
     def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None, middleware_count: int = None, max_memory: Union[int, float] = None):
-        def wrapper(func: Callable, *args, **kwargs):
+        def wrapper(func: Callable):
             _max_memory = max_memory or self.max_memory
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
