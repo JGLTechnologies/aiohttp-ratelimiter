@@ -86,7 +86,7 @@ async def default_keyfunc(request):
     """
     ip = request.headers.get(
         "X-Forwarded-For") or request.remote or "127.0.0.1"
-    ip = (await run_func_async(ip.split, [","]))[0]
+    ip = ip.split(",")[0]
     return ip
 
 class Limiter:
