@@ -1,26 +1,32 @@
 from asyncio.coroutines import iscoroutinefunction
+from collections import defaultdict
 from typing import Callable, Any, Union
 from asyncio import iscoroutinefunction
 from sys import getsizeof
 
 
 none = lambda: None
+IntOrFloat = Union[int, float]
 
 
 class MemorySafeDict:
-    def __init__(self, default: Callable = None, max_memory: Union[int, float] = None) -> None:
+    def __init__(self, default: Callable = None, max_memory: IntOrFloat = None, main = None) -> None:
         """
         MemorySafeDict acts as a defaultdict, but it allows you to specify the max ammount of memory it can use and it will never throw a MemoryError
         """
+        self.main: MemorySafeDict = main
         self.max_memory = max_memory
         self.default = default or none
-        self.data = dict()
+        self.data = {}
+
+    def set_max_memory(self, size: IntOrFloat):
+        self.max_memory = size
 
     def __missing__(self, key) -> None:
         try:
             self.data[key] = self.default()
             if self.max_memory is not None:
-                if self.getsize() > self.max_memory:
+                if self.getsize() >= self.max_memory:
                     raise MemoryError
         except MemoryError:
             self.data.clear()
@@ -31,23 +37,37 @@ class MemorySafeDict:
             try:
                 self.data[key] = self.default()
                 if self.max_memory is not None:
-                    if self.getsize() > self.max_memory:
+                    if self.getsize() >= self.max_memory:
                         raise MemoryError
             except MemoryError:
                 self.data.clear()
                 self.data[key] = self.default()
+
+            if self.main is None:
+                    return
+            if self.main.max_memory is not None:
+                if self.main.getsize() >= self.main.max_memory:
+                    self.data.clear()
+                    self.data[key] = self.default()
         return self.data[key]
 
     def __setitem__(self, key, value) -> None:
         try:
             self.data[key] = value
             if self.max_memory is not None and key not in self.data:
-                if self.getsize() > self.max_memory:
+                if self.getsize() >= self.max_memory:
                     raise MemoryError
         except MemoryError:
             self.data.clear()
             self.data[key] = value
-        
+        finally:
+            if self.main is None:
+                return
+            if self.main.max_memory is not None:
+                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
+                    self.data.clear()
+                    self.data[key] = value
+             
     def __repr__(self) -> str:
         return str(self.data)
 
@@ -83,12 +103,20 @@ class MemorySafeDict:
             for key in dictionary:
                 self.data[key] = dictionary[key]
                 if self.max_memory is not None and key not in self.data:
-                    if self.getsize() > self.max_memory:
+                    if self.getsize() >= self.max_memory:
                         raise MemoryError
         except MemoryError:
             self.data.clear()
             for key in dictionary:
                 self.data[key] = dictionary[key]
+        finally:
+            if self.main is None:
+                return
+            if self.main.max_memory is not None:
+                if self.main.getsize() >= self.main.max_memory:
+                    self.data.clear()
+                    for key in dictionary:
+                        self.data[key] = dictionary[key]
 
     def any(self) -> bool:
         for key in self.data:
@@ -97,7 +125,8 @@ class MemorySafeDict:
         return True
 
     def getsize(self) -> float:
-        return round(getsizeof(self.data) / 1024**3, 20)
+        size = getsizeof(self.data) / 1024**3
+        return size
 
     def get(self, key) -> None:
         if key not in self.data:

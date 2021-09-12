@@ -6,7 +6,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "2.0.9"
+VERSION = "3.0.0"
 
 classifiers = [
     "Development Status :: 4 - Beta",

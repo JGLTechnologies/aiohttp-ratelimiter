@@ -35,10 +35,10 @@ class RateLimitDecorator:
             key = await self.keyfunc(request)
 
             if self.last_reset.get(func_key) is None:
-                self.last_reset[func_key] = defaultdict(now)
+                self.last_reset[func_key] = MemorySafeDict(now, main=self.last_reset)
 
             if self.num_calls.get(func_key) is None:
-                self.num_calls[func_key] = defaultdict(lambda: 0)
+                self.num_calls[func_key] = MemorySafeDict(lambda: 0, main=self.num_calls)
 
             # Checks if the user's IP is in the set of exempt IPs
             if key in self.exempt_ips:
