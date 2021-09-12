@@ -23,16 +23,18 @@ python -m pip install aiohttp-ratelimiter
 Example
 
 ```python
-from aiohttplimiter import limit, default_keyfunc
 from aiohttp import web
+from aiohttplimiter import default_keyfunc, Limiter
 
 app = web.Application()
 routes = web.RouteTableDef()
 
-# This endpoint can only be requested one time per second per IP address.
+limiter = Limiter(keyfunc=default_keyfunc)
+
 @routes.get("/")
-@limit(ratelimit="1/1", keyfunc=default_keyfunc)
-async def test(request):
+# This endpoint can only be requested 1 time per second per IP address
+@limiter.limit("1/1")
+async def home(request):
     return web.Response(text="test")
 
 app.add_routes(routes)
@@ -44,7 +46,7 @@ web.run_app(app)
 You can exempt an IP from ratelimiting using the exempt_ips kwarg.
 
 ```python
-from aiohttplimiter import limit, default_keyfunc
+from aiohttplimiter import Limiter, default_keyfunc
 from aiohttp import web
 
 app = web.Application()
@@ -52,8 +54,10 @@ routes = web.RouteTableDef()
 
 # 192.168.1.245 is exempt from ratelimiting.
 # Keep in mind that exempt_ips takes a set not a list.
+limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
+
 @routes.get("/")
-@limit(ratelimit="1/1", keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
+@limiter.limit("1/1")
 async def test(request):
     return web.Response(text="test")
 
@@ -63,7 +67,8 @@ web.run_app(app)
 
 <br>
 
-If you plan on having the same keyfunc and exempt IPs for each endpoint, using the Limiter class would be easier.
+You can limit how much memory we can use to store ratelimiting info with the max_memory kwargs.
+This kwarg limits the max amount of gigabytes aiohttp-ratelimiter can use to store ratelimiting info the default is 1.
 
 ```python
 from aiohttp import web
@@ -72,10 +77,13 @@ from aiohttplimiter import default_keyfunc, Limiter
 app = web.Application()
 routes = web.RouteTableDef()
 
-limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"})
+# aiohttp-ratelimiter can only store 0.5 gigabytes of ratelimiting data.
+# When the limit is reached the data resets.
+# Please note that the number is not exact. It might be a little over 0.5.
+limiter = Limiter(keyfunc=default_keyfunc, max_memory=.5)
 
 @routes.get("/")
-@limiter.limit("1/5")
+@limiter.limit("1/1")
 def home(request):
     return web.Response(text="test")
 
@@ -85,7 +93,7 @@ web.run_app(app)
 
 <br>
 
-If you have any middlewares, just specify the ammount in the middleware_count kwarg.
+If you have any middlewares, just specify the amount in the middleware_count kwarg.
 
 ```python
 limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"}, middleware_count=1)

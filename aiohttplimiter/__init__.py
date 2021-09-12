@@ -1,3 +1,1 @@
-from .decorators import RateLimitDecorator, default_keyfunc, Limiter
-
-limit = RateLimitDecorator
+from .decorators import default_keyfunc, Limiter
