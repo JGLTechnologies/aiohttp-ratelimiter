@@ -10,23 +10,28 @@ IntOrFloat = Union[int, float]
 
 
 class MemorySafeDict:
-    def __init__(self, default: Callable = None, max_memory: IntOrFloat = None, main = None) -> None:
+    def __init__(self, dictionary: dict = None, default: Callable = None, max_memory: IntOrFloat = None, main = None) -> None:
         """
         MemorySafeDict acts as a defaultdict, but it allows you to specify the max ammount of memory it can use and it will never throw a MemoryError
         """
         self.main: MemorySafeDict = main
-        self.max_memory = max_memory
+        self.max_memory = max_memory * 1024**3 if max_memory is not None else None
         self.default = default or none
-        self.data = {}
+        self.data = dictionary or {}
+        self.nested_dicts = list()
 
     def set_max_memory(self, size: IntOrFloat):
         self.max_memory = size
+
+    def append_nested_iterable(self, dictionary: dict) -> None:
+        self.nested_dicts.append(dictionary)
+
 
     def __missing__(self, key) -> None:
         try:
             self.data[key] = self.default()
             if self.max_memory is not None:
-                if self.getsize() >= self.max_memory:
+                if self.getsize() >= self.max_memory or self.getsize() >= self.main.max_memory:
                     raise MemoryError
         except MemoryError:
             self.data.clear()
@@ -46,17 +51,17 @@ class MemorySafeDict:
             if self.main is None:
                     return
             if self.main.max_memory is not None:
-                if self.main.getsize() >= self.main.max_memory:
+                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
                     self.data.clear()
                     self.data[key] = self.default()
         return self.data[key]
 
     def __setitem__(self, key, value) -> None:
         try:
-            self.data[key] = value
             if self.max_memory is not None and key not in self.data:
                 if self.getsize() >= self.max_memory:
                     raise MemoryError
+            self.data[key] = value
         except MemoryError:
             self.data.clear()
             self.data[key] = value
@@ -101,10 +106,10 @@ class MemorySafeDict:
     def update(self, dictionary: dict) -> None:
         try:
             for key in dictionary:
-                self.data[key] = dictionary[key]
                 if self.max_memory is not None and key not in self.data:
                     if self.getsize() >= self.max_memory:
                         raise MemoryError
+                self.data[key] = dictionary[key]
         except MemoryError:
             self.data.clear()
             for key in dictionary:
@@ -113,7 +118,7 @@ class MemorySafeDict:
             if self.main is None:
                 return
             if self.main.max_memory is not None:
-                if self.main.getsize() >= self.main.max_memory:
+                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
                     self.data.clear()
                     for key in dictionary:
                         self.data[key] = dictionary[key]
@@ -124,8 +129,11 @@ class MemorySafeDict:
                 return False
         return True
 
-    def getsize(self) -> float:
-        size = getsizeof(self.data) / 1024**3
+    def getsize(self) -> IntOrFloat:
+        size = getsizeof(self.data)
+        if len(self.nested_dicts) > 0:
+            nested_dict_size = sum(getsizeof(item) for item in self.nested_dicts)
+            return size + nested_dict_size
         return size
 
     def get(self, key) -> None:
@@ -135,3 +143,14 @@ class MemorySafeDict:
 
     def clear(self) -> None:
         self.data.clear()
+
+# Tesing performance
+# import time
+# start = time.time()
+# dict = MemorySafeDict(max_memory=.5)
+# dict[1] = MemorySafeDict(main=dict)
+# for i in range(100000**100):
+#     dict[i] = i
+# end = time.time()
+# print(end-start)
+
