@@ -132,7 +132,7 @@ class MemorySafeDict:
     def getsize(self) -> IntOrFloat:
         size = getsizeof(self.data)
         if len(self.nested_dicts) > 0:
-            nested_dict_size = sum(getsizeof(item) for item in self.nested_dicts)
+            nested_dict_size = sum(item.getsize() for item in self.nested_dicts)
             return size + nested_dict_size
         return size
 
@@ -145,12 +145,13 @@ class MemorySafeDict:
         self.data.clear()
 
 # Tesing performance
-# import time
-# start = time.time()
-# dict = MemorySafeDict(max_memory=.5)
-# dict[1] = MemorySafeDict(main=dict)
-# for i in range(100000**100):
-#     dict[i] = i
-# end = time.time()
-# print(end-start)
+import time
+start = time.time()
+dict = MemorySafeDict(max_memory=.5)
+dict[1] = MemorySafeDict(main=dict)
+dict.append_nested_iterable(dict[1])
+for i in range(10000000**100):
+    dict[1][i] = i
+end = time.time()
+print(end-start)
 
