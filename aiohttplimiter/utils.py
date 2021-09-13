@@ -145,13 +145,13 @@ class MemorySafeDict:
         self.data.clear()
 
 # Tesing performance
-import time
-start = time.time()
-dict = MemorySafeDict(max_memory=.5)
-dict[1] = MemorySafeDict(main=dict)
-dict.append_nested_iterable(dict[1])
-for i in range(10000000**100):
-    dict[1][i] = i
-end = time.time()
-print(end-start)
+# import time
+# start = time.time()
+# dict = MemorySafeDict(max_memory=.5)
+# dict[1] = MemorySafeDict(main=dict)
+# dict.append_nested_iterable(dict[1])
+# for i in range(10000000**100):
+#     dict[1][i] = i
+# end = time.time()
+# print(end-start)
 
