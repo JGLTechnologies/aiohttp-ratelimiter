@@ -67,8 +67,8 @@ web.run_app(app)
 
 <br>
 
-You can limit how much memory we can use to store ratelimiting info with the max_memory kwargs.
-This kwarg limits the max amount of gigabytes aiohttp-ratelimiter can use to store ratelimiting info the default is None which means aiohttp-ratelimiter can use as much as it can before throwing a MemoryError.
+You can limit how much memory aiohttp-ratelimiter can use to store ratelimiting info with the max_memory kwargs.
+This kwarg limits the max amount of gigabytes aiohttp-ratelimiter can use to store ratelimiting info. The default is None, which means aiohttp-ratelimiter can use as much as it can before throwing a MemoryError.
 
 ```python
 from aiohttp import web

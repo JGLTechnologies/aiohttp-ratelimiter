@@ -164,9 +164,7 @@ class MemorySafeDict:
 # def test():
 #     start = time.time()
 #     dict = MemorySafeDict(max_memory=1)
-#     for _ in range(100):
-#         dict.append_nested_dict(MemorySafeDict())
-#     for i in range(100000):
+#     for i in range(100000000**100):
 #         dict.update({i:i})
 #     end = time.time()
 #     print(end-start)
