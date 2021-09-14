@@ -36,11 +36,11 @@ class RateLimitDecorator:
 
             if self.last_reset.get(func_key) is None:
                 self.last_reset[func_key] = MemorySafeDict(default=now, main=self.last_reset)
-                self.last_reset.append_nested_iterable(self.last_reset[func_key])
+                self.last_reset.append_nested_dict(self.last_reset[func_key])
 
             if self.num_calls.get(func_key) is None:
                 self.num_calls[func_key] = MemorySafeDict(default=lambda: 0, main=self.num_calls)
-                self.num_calls.append_nested_iterable(self.num_calls[func_key])
+                self.num_calls.append_nested_dict(self.num_calls[func_key])
 
             # Checks if the user's IP is in the set of exempt IPs
             if key in self.exempt_ips:
@@ -99,12 +99,12 @@ class Limiter:
         return web.Response(text="Hello World")
     ```
     """
-    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None, middleware_count: int = 0, max_memory: Union[int, float] = 1):
+    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None, middleware_count: int = 0, max_memory: Union[int, float] = None):
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
-        self.last_reset = MemorySafeDict(max_memory=max_memory/2)
-        self.num_calls = MemorySafeDict(max_memory=max_memory/2)
+        self.last_reset = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
+        self.num_calls = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
 
     def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None, middleware_count: int = None):
         def wrapper(func: Callable):

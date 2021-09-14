@@ -1,6 +1,6 @@
 from asyncio.coroutines import iscoroutinefunction
 from collections import defaultdict
-from typing import Callable, Any, Union
+from typing import Callable, Any, Union, Dict
 from asyncio import iscoroutinefunction
 from sys import getsizeof
 
@@ -18,23 +18,27 @@ class MemorySafeDict:
         self.max_memory = max_memory * 1024**3 if max_memory is not None else None
         self.default = default or none
         self.data = dictionary or {}
-        self.nested_dicts = list()
+        self.nested_dicts = []
 
     def set_max_memory(self, size: IntOrFloat):
         self.max_memory = size
 
-    def append_nested_iterable(self, dictionary: dict) -> None:
+    def append_nested_dict(self, dictionary: Dict) -> None:
+        """
+        This method adds any nested MemorySafeDict to a list so it can add it to the total size.
+        Not adding your nested dict could make your max memory not effective.
+        Don't use this unless you are using the max_memory feature.
+        """
         self.nested_dicts.append(dictionary)
-
 
     def __missing__(self, key) -> None:
         try:
             self.data[key] = self.default()
             if self.max_memory is not None:
-                if self.getsize() >= self.max_memory or self.getsize() >= self.main.max_memory:
+                if self.getsize() >= self.max_memory:
                     raise MemoryError
         except MemoryError:
-            self.data.clear()
+            self.clear()
             self.data[key] = self.default()
 
     def __getitem__(self, key) -> Any:
@@ -45,14 +49,14 @@ class MemorySafeDict:
                     if self.getsize() >= self.max_memory:
                         raise MemoryError
             except MemoryError:
-                self.data.clear()
+                self.clear()
                 self.data[key] = self.default()
 
             if self.main is None:
                     return
             if self.main.max_memory is not None:
                 if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
-                    self.data.clear()
+                    self.clear()
                     self.data[key] = self.default()
         return self.data[key]
 
@@ -63,14 +67,14 @@ class MemorySafeDict:
                     raise MemoryError
             self.data[key] = value
         except MemoryError:
-            self.data.clear()
+            self.clear()
             self.data[key] = value
         finally:
             if self.main is None:
                 return
             if self.main.max_memory is not None:
-                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
-                    self.data.clear()
+                if self.main.getsize() >= self.main.max_memory:
+                    self.clear()
                     self.data[key] = value
              
     def __repr__(self) -> str:
@@ -81,7 +85,10 @@ class MemorySafeDict:
             yield key
 
     def __call__(self):
-        funcs = [self.data[key] for key in self.data if callable(self.data[key]) and not iscoroutinefunction(self.data[key])]
+        """
+        Calls all callable values in the dict.
+        """
+        funcs = [value for value in self.data.values() if callable(value) and not iscoroutinefunction(value)]
         for func in funcs:
             func()
     
@@ -111,21 +118,21 @@ class MemorySafeDict:
                         raise MemoryError
                 self.data[key] = dictionary[key]
         except MemoryError:
-            self.data.clear()
+            self.clear()
             for key in dictionary:
                 self.data[key] = dictionary[key]
         finally:
             if self.main is None:
                 return
             if self.main.max_memory is not None:
-                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
-                    self.data.clear()
+                if self.main.getsize() >= self.main.max_memory:
+                    self.clear()
                     for key in dictionary:
                         self.data[key] = dictionary[key]
 
     def any(self) -> bool:
-        for key in self.data:
-            if not self.data[key]:
+        for value in self.data.values():
+            if not value:
                 return False
         return True
 
@@ -143,15 +150,26 @@ class MemorySafeDict:
 
     def clear(self) -> None:
         self.data.clear()
+        self.nested_dicts.clear()
+
+    def sorted_values(self, reverse: bool = False):
+        return self.data.values().sort(reverse=reverse)
+
+    def sorted_keys(self, reverse: bool = False):
+        return self.data.keys().sort(reverse=reverse)
 
 # Tesing performance
 # import time
-# start = time.time()
-# dict = MemorySafeDict(max_memory=.5)
-# dict[1] = MemorySafeDict(main=dict)
-# dict.append_nested_iterable(dict[1])
-# for i in range(10000000**100):
-#     dict[1][i] = i
-# end = time.time()
-# print(end-start)
+
+# def test():
+#     start = time.time()
+#     dict = MemorySafeDict(max_memory=1)
+#     for _ in range(100):
+#         dict.append_nested_dict(MemorySafeDict())
+#     for i in range(100000):
+#         dict.update({i:i})
+#     end = time.time()
+#     print(end-start)
+
+# test()
 
