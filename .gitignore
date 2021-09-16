@@ -1,3 +1,4 @@
 update.py
 testing.py
 aiohttplimiter/__pycache__/
+*.pyc
