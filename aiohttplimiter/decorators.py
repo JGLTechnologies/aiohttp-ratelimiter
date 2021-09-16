@@ -49,7 +49,7 @@ class RateLimitDecorator:
                 return func(request)
 
             # Checks if it is time to reset the number of calls
-            if await self.__period_remaining(request) <= 0:
+            if self.__period_remaining(request) <= 0:
                 self.num_calls[func_key][key] = 0
                 self.last_reset[func_key][key] = now()
 
@@ -67,7 +67,7 @@ class RateLimitDecorator:
             return func(request)
         return wrapper
 
-    async def __period_remaining(self, request: Request) -> IntOrFloat:
+    def __period_remaining(self, request: Request) -> IntOrFloat:
         """
         Gets the ammount of time remaining until the number of calls resets
         """

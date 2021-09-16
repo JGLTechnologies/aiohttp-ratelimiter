@@ -3,3 +3,4 @@ testing.py
 aiohttplimiter/__pycache__/
 *.pyc
 *.log
+*.pyc
