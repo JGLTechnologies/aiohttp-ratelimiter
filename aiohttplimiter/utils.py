@@ -1,5 +1,4 @@
 from asyncio.coroutines import iscoroutinefunction
-from collections import defaultdict
 from typing import Callable, Any, Union, Dict
 from asyncio import iscoroutinefunction
 from sys import getsizeof

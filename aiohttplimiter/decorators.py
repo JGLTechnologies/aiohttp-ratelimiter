@@ -1,8 +1,7 @@
 from functools import wraps
 import time
-from aiohttp import web
 import json
-from typing import Callable, Awaitable, Union
+from typing import Callable, Awaitable
 import asyncio
 from typing import Optional
 from aiohttp.web import Request, Response
@@ -16,7 +15,7 @@ class RateLimitDecorator:
     """
     Decorator to ratelimit requests in the aiohttp.web framework
     """
-    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Awaitable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0):
+    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Awaitable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -33,7 +32,7 @@ class RateLimitDecorator:
         async def wrapper(request: Request) -> Response:
             self.func = func
             func_key = id(func)
-            key = await self.keyfunc(request)
+            key = self.keyfunc(request)
 
             if self.last_reset.get(func_key) is None:
                 self.last_reset[func_key] = MemorySafeDict(default=now, main=self.last_reset)
@@ -73,12 +72,12 @@ class RateLimitDecorator:
         Gets the ammount of time remaining until the number of calls resets
         """
         func_key = id(self.func)
-        key = await self.keyfunc(request)
+        key = self.keyfunc(request)
         elapsed = now() - self.last_reset[func_key][key]
         return self.period - elapsed
 
 
-async def default_keyfunc(request: Request) -> str:
+def default_keyfunc(request: Request) -> str:
     """
     Returns the user's IP
     """
