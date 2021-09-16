@@ -1,11 +1,12 @@
 from functools import wraps
 import time
 from aiohttp import web
-from collections import defaultdict
 import json
 from typing import Callable, Awaitable, Union
 import asyncio
-from .utils import MemorySafeDict
+from typing import Optional
+from aiohttp.web import Request, Response
+from .utils import IntOrFloat, MemorySafeDict
 
 
 now = lambda: time.time()
@@ -15,7 +16,7 @@ class RateLimitDecorator:
     """
     Decorator to ratelimit requests in the aiohttp.web framework
     """
-    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Awaitable, ratelimit: str, exempt_ips: set = None, middleware_count: int = 0):
+    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Awaitable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0):
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -27,9 +28,9 @@ class RateLimitDecorator:
         self.last_reset = last_reset
         self.num_calls = num_calls
 
-    def __call__(self, func):
+    def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
-        async def wrapper(request):
+        async def wrapper(request: Request) -> Response:
             self.func = func
             func_key = id(func)
             key = await self.keyfunc(request)
@@ -59,7 +60,7 @@ class RateLimitDecorator:
             # Returns a JSON response if the number of calls exceeds the max amount of calls
             if self.num_calls[func_key][key] > self.calls:
                 response = json.dumps({"Rate limit exceeded": f'{self._calls} request(s) per {self.period} second(s)'})
-                return web.Response(text=response, content_type="application/json", status=429)
+                return Response(text=response, content_type="application/json", status=429)
 
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
@@ -67,7 +68,7 @@ class RateLimitDecorator:
             return func(request)
         return wrapper
 
-    async def __period_remaining(self, request):
+    async def __period_remaining(self, request: Request) -> IntOrFloat:
         """
         Gets the ammount of time remaining until the number of calls resets
         """
@@ -77,7 +78,7 @@ class RateLimitDecorator:
         return self.period - elapsed
 
 
-async def default_keyfunc(request):
+async def default_keyfunc(request: Request) -> str:
     """
     Returns the user's IP
     """
@@ -96,18 +97,18 @@ class Limiter:
     @routes.get("/")
     @limiter.limit("5/1")
     def foo():
-        return web.Response(text="Hello World")
+        return Response(text="Hello World")
     ```
     """
-    def __init__(self, keyfunc: Awaitable, exempt_ips: set = None, middleware_count: int = 0, max_memory: Union[int, float] = None):
+    def __init__(self, keyfunc: Awaitable, exempt_ips: Optional[set] = None, middleware_count: int = 0, max_memory: Optional[IntOrFloat] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
         self.last_reset = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
         self.num_calls = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
 
-    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: set = None, middleware_count: int = None):
-        def wrapper(func: Callable):
+    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
+        def wrapper(func: Callable) -> RateLimitDecorator:
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
@@ -122,7 +123,7 @@ routes = web.RouteTableDef()
 @routes.get("/")
 @RateLimitDecorator(ratelimit="1/1", keyfunc=default_keyfunc)
 async def test(request):
-    return web.Response(text="test")
+    return Response(text="test")
 
 app.add_routes(routes)
 web.run_app(app)
