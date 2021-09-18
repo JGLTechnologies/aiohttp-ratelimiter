@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 
 def get_long_description():
@@ -6,7 +7,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "3.0.2"
+VERSION = "3.0.3"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,5 +29,6 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp"]
+    install_requires=["aiohttp"],
+    ext_modules=cythonize("aiohttplimiter/utils.pyx")
 )
