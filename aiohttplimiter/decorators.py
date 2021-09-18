@@ -5,7 +5,7 @@ from typing import Callable, Awaitable, Union
 import asyncio
 from typing import Optional
 from aiohttp.web import Request, Response
-from .utils import IntOrFloat, MemorySafeDict
+from .utils import MemorySafeDict
 
 IntOrFloat = Union[int, float]
 now = lambda: time.time()
