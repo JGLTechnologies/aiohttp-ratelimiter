@@ -18,7 +18,7 @@ class MemorySafeDict:
         self.max_memory = max_memory * 1024**3 if max_memory is not None else None
         self.default = default or none
         self.data = dictionary or {}
-        self.nested_dicts = []
+        self.nested_dicts = set()
 
     def set_max_memory(self, size: IntOrFloat):
         self.max_memory = size
@@ -29,7 +29,7 @@ class MemorySafeDict:
         Not adding your nested dict could make your max memory not effective.
         Don't use this unless you are using the max_memory feature.
         """
-        self.nested_dicts.append(dictionary)
+        self.nested_dicts.add(dictionary)
 
     def __missing__(self, key) -> None:
         try:
@@ -55,7 +55,7 @@ class MemorySafeDict:
             if self.main is None:
                     return
             if self.main.max_memory is not None:
-                if self.main.getsize() >= self.main.max_memory or self.getsize() >= self.main.max_memory:
+                if self.main.getsize() >= self.main.max_memory:
                     self.clear()
                     self.data[key] = self.default()
         return self.data[key]
@@ -159,15 +159,18 @@ class MemorySafeDict:
         return self.data.keys().sort(reverse=reverse)
 
 # Tesing performance
-# import time
+import time
 
-# def test():
-#     start = time.time()
-#     dict = MemorySafeDict(max_memory=1)
-#     for i in range(100000000**100):
-#         dict.update({i:i})
-#     end = time.time()
-#     print(end-start)
+def test():
+    start = time.time()
+    dict = MemorySafeDict(max_memory=1)
+    dict[1] = MemorySafeDict(main=dict)
+    dict.append_nested_dict(dict[1])
+    for i in range(1000000):
+        dict[1].update({i:i})
+    end = time.time()
+    print(end-start)
 
-# test()
+if __name__ == "__main__":
+    test()
 
