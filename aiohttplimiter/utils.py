@@ -1,5 +1,4 @@
 from asyncio.coroutines import iscoroutinefunction
-from collections import defaultdict
 from typing import Callable, Any, Union, Dict
 from asyncio import iscoroutinefunction
 from sys import getsizeof
@@ -20,7 +19,7 @@ class MemorySafeDict:
         self.data = dictionary or {}
         self.nested_dicts = set()
 
-    def set_max_memory(self, size: IntOrFloat):
+    def set_max_memory(self, size: IntOrFloat) -> None:
         self.max_memory = size
 
     def append_nested_dict(self, dictionary: Dict) -> None:
@@ -152,10 +151,10 @@ class MemorySafeDict:
         self.data.clear()
         self.nested_dicts.clear()
 
-    def sorted_values(self, reverse: bool = False):
+    def sorted_values(self, reverse: bool = False) -> list:
         return self.data.values().sort(reverse=reverse)
 
-    def sorted_keys(self, reverse: bool = False):
+    def sorted_keys(self, reverse: bool = False) -> list:
         return self.data.keys().sort(reverse=reverse)
 
 # Tesing performance
