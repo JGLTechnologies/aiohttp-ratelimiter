@@ -152,16 +152,3 @@ cdef class MemorySafeDict:
 
     def sorted_keys(self, bool reverse = False):
         return self.data.keys().sort(reverse=reverse)
-
-# Tesing performance
-# import time
-
-# cdef test():
-#     start = time.time()
-#     dict = MemorySafeDict(max_memory=1)
-#     for i in range(100000000**100):
-#         dict.update({i:i})
-#     end = time.time()
-#     print(end-start)
-
-# test()
