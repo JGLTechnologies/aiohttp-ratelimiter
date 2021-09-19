@@ -1,10 +1,6 @@
-from asyncio.coroutines import iscoroutinefunction
-from typing import Callable, Any, Union
-from asyncio import iscoroutinefunction
-from sys import getsizeof
+from typing import Callable, Any, Generator, Union
 
 
-none = lambda: None
 IntOrFloat = Union[int, float]
 
 
@@ -32,9 +28,9 @@ class MemorySafeDict:
              
     def __repr__(self) -> str: ...
 
-    def __iter__(self): ...
+    def __iter__(self) -> Generator: ...
 
-    def __call__(self):
+    def __call__(self) -> None:
         """
         Calls all callable values in the dict.
         """
@@ -45,9 +41,9 @@ class MemorySafeDict:
 
     def pop(self, key) -> None: ...
 
-    def keys(self): ...
+    def keys(self) -> list: ...
 
-    def values(self): ...
+    def values(self) -> list: ...
 
     def update(self, dictionary: dict) -> None: ...
 
@@ -62,16 +58,3 @@ class MemorySafeDict:
     def sorted_values(self, reverse: bool = False) -> list: ...
 
     def sorted_keys(self, reverse: bool = False) -> list: ...
-
-# Tesing performance
-# import time
-
-# def test():
-#     start = time.time()
-#     dict = MemorySafeDict(max_memory=1)
-#     for i in range(100000000**100):
-#         dict.update({i:i})
-#     end = time.time()
-#     print(end-start)
-
-# test()
