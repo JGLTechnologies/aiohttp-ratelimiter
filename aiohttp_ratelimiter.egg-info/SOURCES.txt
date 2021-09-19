@@ -8,3 +8,4 @@ aiohttp_ratelimiter.egg-info/top_level.txt
 aiohttplimiter/__init__.py
 aiohttplimiter/decorators.py
 aiohttplimiter/utils.c
+aiohttplimiter/utils.pyi
