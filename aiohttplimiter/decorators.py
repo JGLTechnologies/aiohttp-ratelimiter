@@ -115,14 +115,17 @@ class Limiter:
         return wrapper
 
 """
+from aiohttp import web
+from aiohttplimiter import default_keyfunc, Limiter
+
 app = web.Application()
 routes = web.RouteTableDef()
+limiter = Limiter(keyfunc=default_keyfunc, max_memory=.5)
 
-# This endpoint can only be requested one time per second per IP address.
 @routes.get("/")
-@RateLimitDecorator(ratelimit="1/1", keyfunc=default_keyfunc)
-async def test(request):
-    return Response(text="test")
+@limiter.limit(ratelimit="5/1")
+def test(request):
+    return web.Response(text="test")
 
 app.add_routes(routes)
 web.run_app(app)
