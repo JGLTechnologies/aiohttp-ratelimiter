@@ -29,7 +29,7 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp"],
+    install_requires=["aiohttp", "Cython"],
     ext_modules=cythonize("aiohttplimiter/utils.pyx"),
     package_data={"aiohttplimiter": ["*.pyi"]}
 )
