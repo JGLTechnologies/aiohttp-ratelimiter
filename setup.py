@@ -1,13 +1,20 @@
 from setuptools import setup, find_packages
-from Cython.Build import cythonize
+import pip
 
+def install(package):
+    if hasattr(pip, 'main'):
+        pip.main(['install', package])
+    else:
+        pip._internal.main(['install', package])
+
+install("Cython")
 
 def get_long_description():
     with open("README.md", encoding="utf-8") as file:
         return file.read()
 
 
-VERSION = "3.0.7"
+VERSION = "3.0.9"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -15,7 +22,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
-
+from Cython.Build import cythonize
 setup(
     name="aiohttp-ratelimiter",
     version=VERSION,
@@ -29,7 +36,7 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "Cython"],
+    install_requires=["aiohttp"],
     ext_modules=cythonize("aiohttplimiter/utils.pyx"),
     package_data={"aiohttplimiter": ["*.pyi"]}
 )
