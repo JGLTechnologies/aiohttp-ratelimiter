@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.1.2
+Version: 3.1.3
 Summary: A simple ratelimiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
@@ -108,6 +108,13 @@ Description: <a href="https://jgltechnologies.com/discord">
         ```
         
         <br>
+        
+        If you want to limit the total ammount of requests you can receive per second use the total_limit kwarg.
+        
+        ```python
+        limiter = Limiter(keyfunc=default_keyfunc, total_limit=1024)
+        ```
+        
         
         
         
