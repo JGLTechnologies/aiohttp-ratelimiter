@@ -17,7 +17,7 @@ class RateLimitDecorator:
     """
     Decorator to ratelimit requests in the aiohttp.web framework
     """
-    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Awaitable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0, total_limit: Optional[AsyncLimiter] = None) -> None:
+    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0, total_limit: Optional[AsyncLimiter] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -140,7 +140,7 @@ class Limiter:
         return Response(text="Hello World")
     ```
     """
-    def __init__(self, keyfunc: Awaitable, exempt_ips: Optional[set] = None, middleware_count: int = 0, max_memory: Optional[IntOrFloat] = None, total_limit: Optional[IntOrFloat] = None) -> None:
+    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, middleware_count: int = 0, max_memory: Optional[IntOrFloat] = None, total_limit: Optional[IntOrFloat] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
@@ -148,7 +148,7 @@ class Limiter:
         self.last_reset = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
         self.num_calls = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
 
-    def limit(self, ratelimit: str, keyfunc: Awaitable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
+    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
         def wrapper(func: Callable) -> RateLimitDecorator:
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
