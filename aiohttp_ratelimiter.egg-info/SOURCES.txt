@@ -7,5 +7,5 @@ aiohttp_ratelimiter.egg-info/requires.txt
 aiohttp_ratelimiter.egg-info/top_level.txt
 aiohttplimiter/__init__.py
 aiohttplimiter/decorators.py
-aiohttplimiter/utils.c
 aiohttplimiter/utils.pyi
+aiohttplimiter/utils.pyx

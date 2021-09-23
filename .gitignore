@@ -4,3 +4,4 @@ aiohttplimiter/__pycache__/
 *.pyc
 *.log
 *.pyc
+*.pyd
