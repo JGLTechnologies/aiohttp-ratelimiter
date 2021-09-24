@@ -6,7 +6,8 @@ import asyncio
 from typing import Optional
 from aiohttp.web import Request, Response
 from .utils import MemorySafeDict
-from aiolimiter import AsyncLimiter
+from .AsyncLimiter import AsyncLimiter
+from aiohttp import web
 
 
 IntOrFloat = Union[int, float]
@@ -70,8 +71,11 @@ class RateLimitDecorator:
                     return await func(request)
                 return func(request)
             else:
-                async with self.total_limit:
-                    self.func = func
+                if not self.total_limit.has_capacity(request=request):
+                    raise web.HTTPServiceUnavailable()
+
+                await self.total_limit.acquire(request=request)
+                self.func = func
                 func_key = id(func)
                 key = self.keyfunc(request)
 
@@ -144,17 +148,17 @@ class Limiter:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
-        self.total_limit = total_limit
-        self.last_reset = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
-        self.num_calls = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
+        self.max_memory = max_memory if max_memory is not None else None
+        self.last_reset = MemorySafeDict(lambda: None, max_memory=max_memory/3 if max_memory is not None else None)
+        self.num_calls = MemorySafeDict(lambda: None, max_memory=max_memory/3 if max_memory is not None else None)
+        self.total_limit = AsyncLimiter(max_rate=total_limit, time_period=1, keyfunc=self.keyfunc, max_memory=self.max_memory/3 if self.max_memory is not None else None) if total_limit is not None else None
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
         def wrapper(func: Callable) -> RateLimitDecorator:
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
-            _total_limit = AsyncLimiter(self.total_limit, 1) if self.total_limit is not None else None
-            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count, num_calls=self.num_calls, last_reset=self.last_reset, total_limit=_total_limit)(func)
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count, num_calls=self.num_calls, last_reset=self.last_reset, total_limit=self.total_limit)(func)
         return wrapper
 
 """

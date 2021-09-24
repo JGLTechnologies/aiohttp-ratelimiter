@@ -5,9 +5,6 @@ from sys import getsizeof
 from cpython cimport bool
 
 
-none = lambda: None
-
-
 cdef class MemorySafeDict:
     cdef MemorySafeDict main
     max_memory: Optional[int]
@@ -15,10 +12,10 @@ cdef class MemorySafeDict:
     cdef list nested_dicts
     default: Callable
 
-    def  __cinit__(self, dict dictionary = None, default = None, max_memory = None, MemorySafeDict main = None):
+    def  __cinit__(self, default, dict dictionary = None, max_memory = None, MemorySafeDict main = None):
         self.main = main
         self.max_memory = max_memory * 1024**3 if max_memory is not None else None
-        self.default = default or none
+        self.default = default
         self.data = dictionary or {}
         self.nested_dicts = []
 

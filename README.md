@@ -4,7 +4,7 @@
 
 # aiohttp-ratelimiter
 
-This library allows you to add a rate limit to your aiohttp.web app.
+aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework. It allows you to ratellimit per endpoint and globally.
 
 
 Install from git
