@@ -4,6 +4,7 @@ from asyncio import iscoroutinefunction
 from sys import getsizeof
 from cpython cimport bool
 
+none = lambda: None
 
 cdef class MemorySafeDict:
     cdef MemorySafeDict main
@@ -12,10 +13,10 @@ cdef class MemorySafeDict:
     cdef list nested_dicts
     default: Callable
 
-    def  __cinit__(self, default, dict dictionary = None, max_memory = None, MemorySafeDict main = None):
+    def  __cinit__(self, dict dictionary = None, max_memory = None, default = None, MemorySafeDict main = None):
         self.main = main
         self.max_memory = max_memory * 1024**3 if max_memory is not None else None
-        self.default = default
+        self.default = default or none
         self.data = dictionary or {}
         self.nested_dicts = []
 
