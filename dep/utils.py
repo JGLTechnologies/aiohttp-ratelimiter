@@ -52,7 +52,7 @@ class MemorySafeDict:
                 self.data[key] = self.default()
 
             if self.main is None:
-                    return
+                    return self.data[key]
             if self.main.max_memory is not None:
                 if self.main.getsize() >= self.main.max_memory:
                     self.clear()
