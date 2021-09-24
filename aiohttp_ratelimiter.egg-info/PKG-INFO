@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.1.8
+Version: 3.2.0
 Summary: A simple ratelimiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
@@ -12,7 +12,7 @@ Description: <a href="https://jgltechnologies.com/discord">
         
         # aiohttp-ratelimiter
         
-        aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework. It allows you to ratellimit per endpoint and globally.
+        aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework.
         
         
         Install from git
@@ -105,14 +105,6 @@ Description: <a href="https://jgltechnologies.com/discord">
         
         ```python
         limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"}, middleware_count=1)
-        ```
-        
-        <br>
-        
-        If you want to limit the total ammount of requests you can receive per second use the total_limit kwarg.
-        
-        ```python
-        limiter = Limiter(keyfunc=default_keyfunc, total_limit=1024)
         ```
         
         

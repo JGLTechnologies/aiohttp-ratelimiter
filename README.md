@@ -4,7 +4,7 @@
 
 # aiohttp-ratelimiter
 
-aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework. It allows you to ratellimit per endpoint and globally.
+aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework.
 
 
 Install from git
@@ -97,14 +97,6 @@ If you have any middlewares, just specify the amount in the middleware_count kwa
 
 ```python
 limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"}, middleware_count=1)
-```
-
-<br>
-
-If you want to limit the total ammount of requests you can receive per second use the total_limit kwarg.
-
-```python
-limiter = Limiter(keyfunc=default_keyfunc, total_limit=1024)
 ```
 
 
