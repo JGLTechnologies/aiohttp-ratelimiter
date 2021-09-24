@@ -149,8 +149,8 @@ class Limiter:
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
         self.max_memory = max_memory if max_memory is not None else None
-        self.last_reset = MemorySafeDict(lambda: None, max_memory=max_memory/3 if max_memory is not None else None)
-        self.num_calls = MemorySafeDict(lambda: None, max_memory=max_memory/3 if max_memory is not None else None)
+        self.last_reset = MemorySafeDict(max_memory=max_memory/3 if max_memory is not None else None)
+        self.num_calls = MemorySafeDict(max_memory=max_memory/3 if max_memory is not None else None)
         self.total_limit = AsyncLimiter(max_rate=total_limit, time_period=1, keyfunc=self.keyfunc, max_memory=self.max_memory/3 if self.max_memory is not None else None) if total_limit is not None else None
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
