@@ -14,8 +14,8 @@ class AsyncLimiter:
         self.max_rate = max_rate
         self.time_period = time_period
         self._rate_per_sec = max_rate / time_period
-        self._level = MemorySafeDict(default=lambda: 0.0, max_memory=max_memory/2)
-        self._last_check = MemorySafeDict(default=lambda: 0.0, max_memory=max_memory/2)
+        self._level = MemorySafeDict(default=lambda: 0.0, max_memory=max_memory/2 if max_memory is not None else None)
+        self._last_check = MemorySafeDict(default=lambda: 0.0, max_memory=max_memory/2 if max_memory is not None else None)
         self.keyfunc = keyfunc
         # queue of waiting futures to signal capacity to
         self._waiters: Dict[asyncio.Task, asyncio.Future] = {}
