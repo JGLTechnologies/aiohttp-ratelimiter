@@ -17,7 +17,7 @@ class RateLimitDecorator:
     """
     Decorator to ratelimit requests in the aiohttp.web framework
     """
-    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0, raise_503: bool = False) -> None:
+    def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -28,7 +28,6 @@ class RateLimitDecorator:
         self.calls = calls
         self.last_reset = last_reset
         self.num_calls = num_calls
-        self.raise_503 = raise_503
 
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
@@ -62,9 +61,7 @@ class RateLimitDecorator:
             # Returns a JSON response if the number of calls exceeds the max amount of calls
             if self.num_calls[func_key][key] > self.calls:
                 response = json.dumps({"Rate limit exceeded": f'{self._calls} request(s) per {self.period} second(s)'})
-                if not self.raise_503:
-                    return Response(text=response, content_type="application/json", status=429)
-                raise web.HTTPServiceUnavailable()
+                return Response(text=response, content_type="application/json", status=429)
 
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
@@ -105,22 +102,20 @@ class Limiter:
         return Response(text="Hello World")
     ```
     """
-    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, middleware_count: int = 0, max_memory: Optional[IntOrFloat] = None, raise_503: bool = False) -> None:
+    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, middleware_count: int = 0, max_memory: Optional[IntOrFloat] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.middleware_count = middleware_count
         self.max_memory = max_memory if max_memory is not None else None
         self.last_reset = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
         self.num_calls = MemorySafeDict(max_memory=max_memory/2 if max_memory is not None else None)
-        self.raise_503 = raise_503
 
-    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None, raise_503: Optional[bool] = None) -> Callable:
+    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None) -> Callable:
         def wrapper(func: Callable) -> RateLimitDecorator:
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
-            _raise_503 = raise_503 or self.raise_503
-            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count, num_calls=self.num_calls, last_reset=self.last_reset, raise_503=_raise_503)(func)
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count, num_calls=self.num_calls, last_reset=self.last_reset)(func)
         return wrapper
 
 """
