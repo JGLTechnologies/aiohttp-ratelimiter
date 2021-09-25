@@ -4,7 +4,7 @@
 
 # aiohttp-ratelimiter
 
-aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework.
+aiohttp-ratelimiter is a rate limiter for the aiohttp.web framework.
 
 
 Install from git
@@ -67,7 +67,7 @@ web.run_app(app)
 
 <br>
 
-You can limit how much memory aiohttp-ratelimiter can use to store ratelimiting info with the max_memory kwargs.
+You can limit how much memory aiohttp-ratelimiter can use to store ratelimiting info with the max_memory kwarg.
 This kwarg limits the max amount of gigabytes aiohttp-ratelimiter can use to store ratelimiting info. The default is None, which means aiohttp-ratelimiter can use as much as it can before throwing a MemoryError.
 
 ```python

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.2.2
+Version: 3.2.21
 Summary: A simple ratelimiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
@@ -12,7 +12,7 @@ Description: <a href="https://jgltechnologies.com/discord">
         
         # aiohttp-ratelimiter
         
-        aiohttp-ratelimiter is a high performance rate limiter for the aiohttp.web framework.
+        aiohttp-ratelimiter is a rate limiter for the aiohttp.web framework.
         
         
         Install from git
@@ -75,7 +75,7 @@ Description: <a href="https://jgltechnologies.com/discord">
         
         <br>
         
-        You can limit how much memory aiohttp-ratelimiter can use to store ratelimiting info with the max_memory kwargs.
+        You can limit how much memory aiohttp-ratelimiter can use to store ratelimiting info with the max_memory kwarg.
         This kwarg limits the max amount of gigabytes aiohttp-ratelimiter can use to store ratelimiting info. The default is None, which means aiohttp-ratelimiter can use as much as it can before throwing a MemoryError.
         
         ```python
