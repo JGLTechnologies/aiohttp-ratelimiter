@@ -14,7 +14,7 @@ def now(): return time.time()
 
 class RateLimitDecorator:
     """
-    Decorator to ratelimit requests in the aiohttp.web framework
+    Decorator to ratelimit requests in the aiohttp.web framework amount
     """
 
     def __init__(self, last_reset: MemorySafeDict, num_calls: MemorySafeDict, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0) -> None:
@@ -75,7 +75,7 @@ class RateLimitDecorator:
 
     def __period_remaining(self, request: Request) -> IntOrFloat:
         """
-        Gets the ammount of time remaining until the number of calls resets
+        Gets the amount of time remaining until the number of calls resets
         """
         func_key = id(self.func)
         key = self.keyfunc(request)

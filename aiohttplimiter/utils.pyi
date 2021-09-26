@@ -6,7 +6,7 @@ IntOrFloat = Union[int, float]
 
 class MemorySafeDict:
     """
-    MemorySafeDict acts as a defaultdict, but it allows you to specify the max ammount of memory it can use and it will never throw a MemoryError
+    MemorySafeDict acts as a defaultdict, but it allows you to specify the max amount of memory it can use and it will never throw a MemoryError
     """
     
     def __init__(self, dictionary: dict = None, default: Callable = None, max_memory: IntOrFloat = None, main = None) -> None: ...

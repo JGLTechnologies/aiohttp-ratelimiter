@@ -52,7 +52,7 @@ from aiohttp import web
 app = web.Application()
 routes = web.RouteTableDef()
 
-# 192.168.1.245 is exempt from ratelimiting.
+# 192.168.1.245 is exempt from rate limiting.
 # Keep in mind that exempt_ips takes a set not a list.
 limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
 
@@ -77,7 +77,7 @@ from aiohttplimiter import default_keyfunc, Limiter
 app = web.Application()
 routes = web.RouteTableDef()
 
-# aiohttp-ratelimiter can only store 0.5 gigabytes of ratelimiting data.
+# aiohttp-ratelimiter can only store 0.5 gigabytes of rate limiting data.
 # When the limit is reached the data resets.
 # Please note that the number is not exact. It might be a little over 0.5.
 limiter = Limiter(keyfunc=default_keyfunc, max_memory=.5)
