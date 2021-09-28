@@ -110,7 +110,7 @@ class RateLimitDecorator:
                             return func(request)
                         return r
                 response = json.dumps(
-                    {"Rate limit exceeded": f'{self._calls} request(s) per {self.period} second(s)'})
+                    {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
                 return Response(text=response, content_type="application/json", status=429)
 
             # Returns normal response if the user did not go over the ratelimit
