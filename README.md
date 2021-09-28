@@ -105,8 +105,9 @@ You can create your own error handler by using the error_handler kwarg.
 
 ```python
 from aiohttplimiter import Allow, RateLimitExceeded, Limiter, default_keyfunc
+from aiohttp import web
 
-def handler(exc: RateLimitExceeded):
+def handler(request: web.Request, exc: RateLimitExceeded):
     # If for some reason you want to allow the request, return aiohttplimiter.Allow().
     if some_condition:
         return Allow()

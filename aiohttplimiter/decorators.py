@@ -30,13 +30,8 @@ class Allow:
 
 
 class RateLimitExceeded(BaseModel):
-    max_calls: int
-    time_period: IntOrFloat
+    detail: str
     time_remaining: float
-    request: web.Request
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class RateLimitDecorator:
@@ -95,15 +90,15 @@ class RateLimitDecorator:
             if self.num_calls[func_key][key] > self.calls:
                 if self.error_handler is not None:
                     if asyncio.iscoroutinefunction(self.error_handler):
-                        r = await self.error_handler(exc=RateLimitExceeded(**{"time_remaining": time_remaining, "request": request, "max_calls": self.calls, "time_period": self.period}))
+                        r = await self.error_handler(request=request, exc=RateLimitExceeded(**{"time_remaining": time_remaining, "detail": f"{self._calls} request(s) per {self.period} second(s)"}))
                         if isinstance(r, Allow):
                             if asyncio.iscoroutinefunction(func):
                                 return await func(request)
                             return func(request)
                         return r
                     else:
-                        r = self.error_handler(exc=RateLimitExceeded(
-                            **{"time_remaining": time_remaining, "request": request, "max_calls": self.calls, "time_period": self.period}))
+                        r = self.error_handler(request=request, exc=RateLimitExceeded(
+                            **{"time_remaining": time_remaining, "detail": f"{self._calls} request(s) per {self.period} second(s)"}))
                         if isinstance(r, Allow):
                             if asyncio.iscoroutinefunction(func):
                                 return await func(request)
