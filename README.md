@@ -99,6 +99,20 @@ If you have any middlewares, just specify the amount in the middleware_count kwa
 limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.235"}, middleware_count=1)
 ```
 
+<br>
 
+You can create your own error handler by using the error_handler kwarg.
+
+```python
+from aiohttplimiter import Allow, RateLimitExceeded
+
+def handler(exc: RateLimitExceeded):
+    # If for some reason you want to allow the request, return aiohttplimiter.Allow().
+    if some_condition:
+        return Allow()
+    return web.Response(text="Too many requests" status=429)
+
+limiter = Limiter(keyfunc=default_keyfunc, error_handler=handler)
+```
 
 
