@@ -6,7 +6,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "3.2.7"
+VERSION = "3.2.8"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -29,7 +29,7 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "pydantic"],
+    install_requires=["aiohttp"],
     ext_modules=[Extension("aiohttplimiter.utils", ["aiohttplimiter/utils.pyx"])],
     package_data={"aiohttplimiter": ["*.pyi"]},
     setup_requires=["Cython"]

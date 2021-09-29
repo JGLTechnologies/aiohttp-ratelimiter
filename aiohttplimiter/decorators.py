@@ -6,8 +6,6 @@ import asyncio
 from typing import Optional
 from aiohttp.web import Request, Response
 from .utils import MemorySafeDict
-from pydantic import BaseModel
-from aiohttp import web
 
 
 IntOrFloat = Union[int, float]
@@ -29,9 +27,18 @@ class Allow:
         pass
 
 
-class RateLimitExceeded(BaseModel):
-    detail: str
-    time_remaining: float
+class RateLimitExceeded:
+    def __init__(self, detail: str, time_remaining: float) -> None:
+        self._detail = detail
+        self._time_remaining = time_remaining
+
+    @property
+    def detail(self):
+        return self._detail
+
+    @property
+    def time_remaining(self):
+        return self._time_remaining
 
 
 class RateLimitDecorator:
@@ -86,7 +93,7 @@ class RateLimitDecorator:
             # Increments the number of calls by 1
             self.num_calls[func_key][key] += 1
 
-            # Returns a JSON response if the number of calls exceeds the max amount of calls
+            # Returns a response if the number of calls exceeds the max amount of calls
             if self.num_calls[func_key][key] > self.calls:
                 if self.error_handler is not None:
                     if asyncio.iscoroutinefunction(self.error_handler):
@@ -106,8 +113,10 @@ class RateLimitDecorator:
                         return r
                 data = json.dumps(
                     {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
-                response = Response(text=data, content_type="application/json", status=429)
-                response.headers.add("error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
+                response = Response(
+                    text=data, content_type="application/json", status=429)
+                response.headers.add(
+                    "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
                 return response
 
             # Returns normal response if the user did not go over the ratelimit
@@ -129,10 +138,8 @@ class RateLimitDecorator:
 
 class Limiter:
     """
-    This should be used if you plan on having the same settings for each endpoint
-
     ```
-    limiter = Limiter(keyfunc=your_keyfunc, exempt_ips={"192.168.1.345"})
+    limiter = Limiter(keyfunc=your_keyfunc)
 
     @routes.get("/")
     @limiter.limit("5/1")
