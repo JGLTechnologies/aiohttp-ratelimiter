@@ -104,9 +104,11 @@ class RateLimitDecorator:
                                 return await func(request)
                             return func(request)
                         return r
-                response = json.dumps(
+                data = json.dumps(
                     {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
-                return Response(text=response, content_type="application/json", status=429)
+                response = Response(text=data, content_type="application/json", status=429)
+                response.headers.add("error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
+                return response
 
             # Returns normal response if the user did not go over the ratelimit
             if asyncio.iscoroutinefunction(func):
