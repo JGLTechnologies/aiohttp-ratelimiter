@@ -97,14 +97,14 @@ class RateLimitDecorator:
             if self.num_calls[func_key][key] > self.calls:
                 if self.error_handler is not None:
                     if asyncio.iscoroutinefunction(self.error_handler):
-                        r = await self.error_handler(request=request, exc=RateLimitExceeded(**{"time_remaining": time_remaining, "detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                        r = await self.error_handler(request, RateLimitExceeded(**{"time_remaining": time_remaining, "detail": f"{self._calls} request(s) per {self.period} second(s)"}))
                         if isinstance(r, Allow):
                             if asyncio.iscoroutinefunction(func):
                                 return await func(request)
                             return func(request)
                         return r
                     else:
-                        r = self.error_handler(request=request, exc=RateLimitExceeded(
+                        r = self.error_handler(request, RateLimitExceeded(
                             **{"time_remaining": time_remaining, "detail": f"{self._calls} request(s) per {self.period} second(s)"}))
                         if isinstance(r, Allow):
                             if asyncio.iscoroutinefunction(func):
