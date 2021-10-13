@@ -160,7 +160,7 @@ class Limiter:
         self.error_handler = error_handler
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> Callable:
-        def wrapper(func: Callable) -> RateLimitDecorator:
+        def wrapper(func: Callable) -> Awaitable:
             _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
