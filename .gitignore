@@ -5,3 +5,4 @@ aiohttplimiter/__pycache__/
 *.log
 *.pyd
 .vscode/settings.json
+/venv/
