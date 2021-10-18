@@ -6,3 +6,4 @@ aiohttplimiter/__pycache__/
 *.pyd
 .vscode/settings.json
 /venv/
+/.idea/
