@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.3.7
+Version: 3.3.8
 Summary: A simple rate limiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
