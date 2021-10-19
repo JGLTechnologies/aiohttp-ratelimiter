@@ -37,14 +37,7 @@ class RateLimitDecorator:
         async def wrapper(request: Request) -> Response:
             self.func = func
             key = self.keyfunc(request)
-            self.tr_key = f"TR {key}:{str(id(func))}"
-            self.nc_key = f"NC {key}:{str(id(func))}"
-
-            if await self.db.get(self.tr_key) is None:
-                await self.db.set(self.tr_key, now())
-
-            if await self.db.get(self.nc_key) is None:
-                await self.db.set(self.nc_key, 0)
+            db_key = f"{key}:{str(id(func))}"
 
             # Checks if the user's IP is in the set of exempt IPs
             if default_keyfunc(request) in self.exempt_ips:
@@ -52,17 +45,11 @@ class RateLimitDecorator:
                     return await func(request)
                 return func(request)
 
-            # Checks if it is time to reset the number of calls
-            time_remaining = await self.__period_remaining(request)
-            if time_remaining <= 0:
-                await self.db.set(self.nc_key, 0)
-                await self.db.set(self.tr_key, now())
-
-            # Increments the number of calls by 1
-            await self.db.incr(self.nc_key)
-
             # Returns a response if the number of calls exceeds the max amount of calls
-            if float(await self.db.get(self.nc_key)) > self.calls:
+            nc = await self.db.get(db_key)
+            nc = int(nc.decode()) if nc is not None else 1
+            print(nc)
+            if nc >= self.calls:
                 if self.error_handler is not None:
                     if asyncio.iscoroutinefunction(self.error_handler):
                         r = await self.error_handler(request, RateLimitExceeded(**{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
@@ -87,20 +74,15 @@ class RateLimitDecorator:
                     "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
                 return response
 
+            # Increments the number of calls by 1
+            await self.db.incr(db_key)
+            await self.db.expire(db_key, self.period)
             # Returns normal response if the user did not go over the rate limit
             if asyncio.iscoroutinefunction(func):
                 return await func(request)
             return func(request)
 
         return wrapper
-
-    async def __period_remaining(self, request: Request) -> IntOrFloat:
-        """
-        Gets the amount of time remaining until the number of calls resets
-        """
-        tr = float(await self.db.get(self.tr_key))
-        elapsed = now() - tr
-        return self.period - elapsed
 
 
 class RedisLimiter:

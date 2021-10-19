@@ -59,7 +59,6 @@ class RateLimitDecorator:
         async def wrapper(request: Request) -> Response:
             self.func = func
             key = self.keyfunc(request)
-            print(key)
             db_key = f"{key}:{str(id(func))}"
 
             if not self.db.check():
