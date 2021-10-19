@@ -48,7 +48,6 @@ class RateLimitDecorator:
             # Returns a response if the number of calls exceeds the max amount of calls
             nc = await self.db.get(db_key)
             nc = int(nc.decode()) if nc is not None else 1
-            print(nc)
             if nc >= self.calls:
                 if self.error_handler is not None:
                     if asyncio.iscoroutinefunction(self.error_handler):
