@@ -1,9 +1,8 @@
 from functools import wraps
 import time
 import json
-from typing import Callable, Awaitable, Union
+from typing import Callable, Awaitable, Union, Optional
 import asyncio
-from typing import Optional
 from aiohttp.web import Request, Response
 from limits.storage import MemoryStorage
 
@@ -60,6 +59,7 @@ class RateLimitDecorator:
         async def wrapper(request: Request) -> Response:
             self.func = func
             key = self.keyfunc(request)
+            print(key)
             db_key = f"{key}:{str(id(func))}"
 
             if not self.db.check():

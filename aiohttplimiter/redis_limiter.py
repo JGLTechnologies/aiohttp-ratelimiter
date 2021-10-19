@@ -18,11 +18,11 @@ class RateLimitDecorator:
     Decorator to rate limit requests in the aiohttp.web framework with redis
     """
 
-    def __init__(self, db: aioredis.Redis, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, middleware_count: int = 0, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(self, db: aioredis.Redis, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
-        calls = int(calls) + middleware_count
+        calls = int(calls)
         period = int(period)
         assert period > 0
         assert calls > 0
@@ -114,18 +114,16 @@ class RedisLimiter:
     ```
     """
 
-    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, middleware_count: int = 0, error_handler: Optional[Union[Callable, Awaitable]] = None, **redis_args) -> None:
+    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None, **redis_args) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
-        self.middleware_count = middleware_count
         self.db = aioredis.Redis(**redis_args)
         self.error_handler = error_handler
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> Callable:
         def wrapper(func: Callable) -> Awaitable:
-            _middleware_count = middleware_count or self.middleware_count
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
             _error_handler = self.error_handler or error_handler
-            return RateLimitDecorator(db=self.db, keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, middleware_count=_middleware_count, error_handler=_error_handler)(func)
+            return RateLimitDecorator(db=self.db, keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, error_handler=_error_handler)(func)
         return wrapper
