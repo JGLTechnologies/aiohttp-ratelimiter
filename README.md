@@ -5,6 +5,8 @@
 # aiohttp-ratelimiter
 
 aiohttp-ratelimiter is a rate limiter for the aiohttp.web framework.
+This is a new library and we are always looking for people to contribute. If you see something wrong with the code or want to add a feature create a pull request 
+on <a href="https://jgltechnologies.com/aiohttplimiter">our github</a>.
 
 
 Install from git
