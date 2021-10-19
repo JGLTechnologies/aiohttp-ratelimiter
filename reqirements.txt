@@ -1,3 +1,3 @@
 aiohttp
-Cython
-twine
+aioredis
+limits
