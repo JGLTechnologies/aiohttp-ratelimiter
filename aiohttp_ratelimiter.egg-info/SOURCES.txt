@@ -6,5 +6,5 @@ aiohttp_ratelimiter.egg-info/dependency_links.txt
 aiohttp_ratelimiter.egg-info/requires.txt
 aiohttp_ratelimiter.egg-info/top_level.txt
 aiohttplimiter/__init__.py
-aiohttplimiter/decorators.py
+aiohttplimiter/memory_limiter.py
 aiohttplimiter/redis_limiter.py

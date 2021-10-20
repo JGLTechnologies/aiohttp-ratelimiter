@@ -1,14 +1,9 @@
 from functools import wraps
-import time
 import json
 from typing import Callable, Awaitable, Union, Optional
 import asyncio
 from aiohttp.web import Request, Response
 from limits.storage import MemoryStorage
-
-
-IntOrFloat = Union[int, float]
-def now(): return time.time()
 
 
 def default_keyfunc(request: Request) -> str:
@@ -57,12 +52,17 @@ class RateLimitDecorator:
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
         async def wrapper(request: Request) -> Response:
-            self.func = func
             key = self.keyfunc(request)
             db_key = f"{key}:{str(id(func))}"
 
             if not self.db.check():
                 self.db.reset()
+
+            # Checks if the user's IP is in the set of exempt IPs
+            if default_keyfunc(request) in self.exempt_ips:
+                if asyncio.iscoroutinefunction(func):
+                    return await func(request)
+                return func(request)
 
             # Returns a response if the number of calls exceeds the max amount of calls
             if self.db.get(db_key) >= self.calls:

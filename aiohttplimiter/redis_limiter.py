@@ -1,16 +1,10 @@
 from functools import wraps
-import time
 import json
-from typing import Callable, Awaitable, Union
+from typing import Callable, Awaitable, Union, Optional
 import asyncio
-from typing import Optional
 from aiohttp.web import Request, Response
 import aioredis
-from .decorators import default_keyfunc, RateLimitExceeded, Allow
-
-
-IntOrFloat = Union[int, float]
-def now(): return time.time()
+from .memory_limiter import default_keyfunc, RateLimitExceeded, Allow
 
 
 class RateLimitDecorator:
@@ -35,7 +29,6 @@ class RateLimitDecorator:
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
         async def wrapper(request: Request) -> Response:
-            self.func = func
             key = self.keyfunc(request)
             db_key = f"{key}:{str(id(func))}"
 
