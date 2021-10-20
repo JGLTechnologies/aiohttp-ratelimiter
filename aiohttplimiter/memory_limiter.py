@@ -91,7 +91,7 @@ class RateLimitDecorator:
                 return response
 
             self.db.incr(key=db_key, expiry=self.period)
-            # Returns normal response if the user did not go over the ratelimit
+            # Returns normal response if the user did not go over the rate limit
             if asyncio.iscoroutinefunction(func):
                 return await func(request)
             return func(request)
