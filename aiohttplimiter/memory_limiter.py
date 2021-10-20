@@ -4,6 +4,7 @@ from typing import Callable, Awaitable, Union, Optional
 import asyncio
 from aiohttp.web import Request, Response
 from limits.storage import MemoryStorage
+from pyramid.decorator import reify
 
 
 def default_keyfunc(request: Request) -> str:
@@ -124,4 +125,11 @@ class Limiter:
             _error_handler = self.error_handler or error_handler
             return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, error_handler=_error_handler, db=self.db)(func)
         return wrapper
+
+    async def reset(self):
+        self.db.reset()
+
+    @reify
+    def db(self) -> MemoryStorage:
+        return self._db
 
