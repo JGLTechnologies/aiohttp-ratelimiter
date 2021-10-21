@@ -4,7 +4,6 @@ from typing import Callable, Awaitable, Union, Optional
 import asyncio
 from aiohttp.web import Request, Response
 from limits.storage import MemoryStorage
-from pyramid.decorator import reify
 
 
 def default_keyfunc(request: Request) -> str:
@@ -36,7 +35,7 @@ class RateLimitDecorator:
     Decorator to rate limit requests in the aiohttp.web framework
     """
 
-    def __init__(self, db: MemoryStorage, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(self, db: MemoryStorage, path_id: str, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -49,53 +48,78 @@ class RateLimitDecorator:
         self.calls = calls
         self.error_handler = error_handler
         self.db = db
+        self.path_id = path_id
 
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
         async def wrapper(request: Request) -> Response:
             key = self.keyfunc(request)
-            db_key = f"{key}:{str(id(func))}"
+            db_key = f"{key}:{self.path_id or request.path}"
 
             if not self.db.check():
                 self.db.reset()
 
-            # Checks if the user's IP is in the set of exempt IPs
-            if default_keyfunc(request) in self.exempt_ips:
-                if asyncio.iscoroutinefunction(func):
-                    return await func(request)
-                return func(request)
-
-            # Returns a response if the number of calls exceeds the max amount of calls
-            if self.db.get(db_key) >= self.calls:
-                if self.error_handler is not None:
-                    if asyncio.iscoroutinefunction(self.error_handler):
-                        r = await self.error_handler(request, RateLimitExceeded(**{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                        if isinstance(r, Allow):
-                            if asyncio.iscoroutinefunction(func):
-                                return await func(request)
-                            return func(request)
-                        return r
-                    else:
-                        r = self.error_handler(request, RateLimitExceeded(
-                            **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                        if isinstance(r, Allow):
-                            if asyncio.iscoroutinefunction(func):
-                                return await func(request)
-                            return func(request)
-                        return r
-                data = json.dumps(
-                    {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
-                response = Response(
-                    text=data, content_type="application/json", status=429)
-                response.headers.add(
-                    "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
-                return response
-
-            self.db.incr(key=db_key, expiry=self.period)
-            # Returns normal response if the user did not go over the rate limit
             if asyncio.iscoroutinefunction(func):
+                # Checks if the user's IP is in the set of exempt IPs
+                if default_keyfunc(request) in self.exempt_ips:
+                    return await func(request)
+
+                # Returns a response if the number of calls exceeds the max amount of calls
+                if self.db.get(db_key) >= self.calls:
+                    if self.error_handler is not None:
+                        if asyncio.iscoroutinefunction(self.error_handler):
+                            r = await self.error_handler(request, RateLimitExceeded(**{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                            if isinstance(r, Allow):
+                                return await func(request)
+                            return r
+                        else:
+                            r = self.error_handler(request, RateLimitExceeded(
+                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                            if isinstance(r, Allow):
+                                return await func(request)
+                            return r
+                    data = json.dumps(
+                        {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
+                    response = Response(
+                        text=data, content_type="application/json", status=429)
+                    response.headers.add(
+                        "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
+                    return response
+
+                self.db.incr(key=db_key, expiry=self.period)
+                # Returns normal response if the user did not go over the rate limit
                 return await func(request)
-            return func(request)
+            else:
+                # Checks if the user's IP is in the set of exempt IPs
+                if default_keyfunc(request) in self.exempt_ips:
+                    return func(request)
+
+                # Returns a response if the number of calls exceeds the max amount of calls
+                if self.db.get(db_key) >= self.calls:
+                    if self.error_handler is not None:
+                        if asyncio.iscoroutinefunction(self.error_handler):
+                            r = await self.error_handler(request, RateLimitExceeded(
+                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                            if isinstance(r, Allow):
+                                return func(request)
+                            return r
+                        else:
+                            r = self.error_handler(request, RateLimitExceeded(
+                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                            if isinstance(r, Allow):
+                                return func(request)
+                            return r
+                    data = json.dumps(
+                        {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
+                    response = Response(
+                        text=data, content_type="application/json", status=429)
+                    response.headers.add(
+                        "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
+                    return response
+
+                self.db.incr(key=db_key, expiry=self.period)
+                # Returns normal response if the user did not go over the rate limit
+                return func(request)
 
         return wrapper
 
@@ -118,18 +142,15 @@ class Limiter:
         self.error_handler = error_handler
         self.db = MemoryStorage()
 
-    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> Callable:
+    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
         def wrapper(func: Callable) -> Awaitable:
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
             _error_handler = self.error_handler or error_handler
-            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, error_handler=_error_handler, db=self.db)(func)
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, error_handler=_error_handler, db=self.db, path_id=path_id)(func)
         return wrapper
 
     async def reset(self):
         self.db.reset()
 
-    @reify
-    def db(self) -> MemoryStorage:
-        return self._db
 

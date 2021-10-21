@@ -95,4 +95,32 @@ from aiohttplimiter import RedisLimiter
 limiter = RedisLimiter(host="localhost", port=7562, password="1258")
 ```
 
+<br>
+
+If multiple paths use one handler like this:
+
+<br>
+
+```python
+@routes.get("/")
+@routes.get("/home")
+@limiter.limit("5/1")
+def home(request):
+    return web.Response(text="Hello")
+```
+
+<br>
+
+Then they will have separate rate limits. To prevent this use the path_id kwarg.
+
+<br>
+
+```python
+@routes.get("/")
+@routes.get("/home")
+@limiter.limit("5/1", path_id="home")
+def home(request):
+    return web.Response(text="Hello")
+```
+
 
