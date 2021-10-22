@@ -11,7 +11,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "3.4.0"
+VERSION = "3.4.3"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -33,5 +33,5 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "limits", "aioredis"],
+    install_requires=["aiohttp", "limits", "aredis"],
 )
