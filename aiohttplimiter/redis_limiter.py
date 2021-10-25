@@ -3,7 +3,7 @@ import json
 from typing import Callable, Awaitable, Union, Optional
 import asyncio
 from aiohttp.web import Request, Response
-import aredis
+import aioredis
 from .memory_limiter import default_keyfunc, RateLimitExceeded, Allow
 
 
@@ -12,7 +12,7 @@ class RateLimitDecorator:
     Decorator to rate limit requests in the aiohttp.web framework with redis
     """
 
-    def __init__(self, db: aredis.StrictRedis, path_id: str, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(self, db: aioredis.Redis, path_id: str, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -30,6 +30,7 @@ class RateLimitDecorator:
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
         async def wrapper(request: Request) -> Response:
+            db = self.db
             key = self.keyfunc(request)
             db_key = f"{key}:{self.path_id or request.path}"
 
@@ -39,7 +40,7 @@ class RateLimitDecorator:
                     return await func(request)
 
                 # Returns a response if the number of calls exceeds the max amount of calls
-                nc = await self.db.get(db_key)
+                nc = await db.get(db_key)
                 nc = int(nc.decode()) if nc is not None else 0
                 if nc >= self.calls:
                     if self.error_handler is not None:
@@ -63,8 +64,8 @@ class RateLimitDecorator:
                     return response
 
                 # Increments the number of calls by 1
-                await self.db.incr(db_key)
-                await self.db.expire(db_key, self.period)
+                await db.incr(db_key)
+                await db.expire(db_key, self.period)
                 # Returns normal response if the user did not go over the rate limit
                 return await func(request)
             else:
@@ -73,7 +74,7 @@ class RateLimitDecorator:
                     return func(request)
 
                 # Returns a response if the number of calls exceeds the max amount of calls
-                nc = await self.db.get(db_key)
+                nc = await db.get(db_key)
                 nc = int(nc.decode()) if nc is not None else 0
                 if nc >= self.calls:
                     if self.error_handler is not None:
@@ -98,11 +99,10 @@ class RateLimitDecorator:
                     return response
 
                 # Increments the number of calls by 1
-                await self.db.incr(db_key)
-                await self.db.expire(db_key, self.period)
+                await db.incr(db_key)
+                await db.expire(db_key, self.period)
                 # Returns normal response if the user did not go over the rate limit
                 return func(request)
-
         return wrapper
 
 
@@ -120,7 +120,7 @@ class RedisLimiter:
     def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None, **redis_args) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
-        self.db = aredis.StrictRedis(**redis_args)
+        self.db = aioredis.Redis(**redis_args)
         self.error_handler = error_handler
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None, error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:

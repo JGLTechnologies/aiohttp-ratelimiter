@@ -33,5 +33,5 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "limits", "aredis"],
+    install_requires=["aiohttp", "limits", "aioredis"],
 )
