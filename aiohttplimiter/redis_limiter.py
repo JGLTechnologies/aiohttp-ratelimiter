@@ -64,8 +64,7 @@ class RateLimitDecorator:
                     return response
 
                 # Increments the number of calls by 1
-                await db.incr(db_key)
-                await db.expire(db_key, self.period)
+                await asyncio.gather(*[db.incr(db_key), db.expire(db_key, self.period)])
                 # Returns normal response if the user did not go over the rate limit
                 return await func(request)
             else:
@@ -99,8 +98,7 @@ class RateLimitDecorator:
                     return response
 
                 # Increments the number of calls by 1
-                await db.incr(db_key)
-                await db.expire(db_key, self.period)
+                await asyncio.gather(*[db.incr(db_key), db.expire(db_key, self.period)])
                 # Returns normal response if the user did not go over the rate limit
                 return func(request)
         return wrapper
@@ -123,7 +121,7 @@ class RedisLimiter:
         self.db = aioredis.Redis(**redis_args)
         self.error_handler = error_handler
 
-    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, middleware_count: int = None, error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
+    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
         def wrapper(func: Callable) -> Awaitable:
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
