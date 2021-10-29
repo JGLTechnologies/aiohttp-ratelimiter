@@ -86,21 +86,7 @@ limiter = Limiter(keyfunc=default_keyfunc, error_handler=handler)
 
 <br>
 
-If you want to use Redis instead, use aiohttplimiter.RedisLimiter instead of aiohttplimiter.Limiter. 
-
-```python
-from aiohttplimiter import RedisLimiter
-
-
-limiter = RedisLimiter(host="localhost", port=7562, password="1258")
-```
-
-<br>
-
 If multiple paths use one handler like this:
-
-<br>
-
 ```python
 @routes.get("/")
 @routes.get("/home")
@@ -113,8 +99,6 @@ def home(request):
 
 Then they will have separate rate limits. To prevent this use the path_id kwarg.
 
-<br>
-
 ```python
 @routes.get("/")
 @routes.get("/home")
@@ -122,5 +106,49 @@ Then they will have separate rate limits. To prevent this use the path_id kwarg.
 def home(request):
     return web.Response(text="Hello")
 ```
+
+<br>
+
+If you want to use Redis instead, use the RedisLimiter class. 
+
+```python
+from aiohttplimiter import RedisLimiter
+
+
+limiter = RedisLimiter(host="localhost", port=7562, password="1258")
+```
+<p style="color: red;">
+RedisLimiter is still being tested and might not be stable for production.
+</p>
+
+<br>
+
+If you want to use MongoDB, then use the MongoLimiter class.
+
+```python
+from motor.motor_asyncio import AsyncIOMotorClient
+from aiohttplimiter import MongoLimiter, default_keyfunc
+
+cluster = AsyncIOMotorClient("link_to_your_db")
+db = cluster["your_db_name"]
+limiter = MongoLimiter(keyfunc=default_keyfunc, db=db)
+```
+<p style="color: red;">
+MongoLimiter is still being tested and might not be stable for production.
+</p>
+
+<br>
+
+If you want to use memcached, then use the MemcachedLimiter class.
+
+```python
+from aiohttplimiter import default_keyfunc, MemcachedLimiter
+
+limiter = MemcachedLimiter(keyfunc=default_keyfunc, host="localhost", port=8000)
+```
+<p style="color: red;">
+MemcachedLimiter is still being tested and might not be stable for production.
+</p>
+
 
 

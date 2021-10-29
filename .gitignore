@@ -7,4 +7,3 @@ aiohttplimiter/__pycache__/
 .vscode/settings.json
 /venv/
 /.idea/
-aiohttplimiter/mongo_limiter.py
