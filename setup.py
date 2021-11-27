@@ -1,6 +1,5 @@
 from setuptools import setup, find_packages
 import sys
-import os
 
 if sys.version_info < (3, 7):
     raise RuntimeError("aiohttp-ratelimiter requires python 3.7 or later.")
@@ -11,7 +10,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "3.4.6"
+VERSION = "3.5.0"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -33,5 +32,5 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "limits", "aioredis", "aiomcache", "motor"],
+    install_requires=["aiohttp", "limits", "redis"],
 )

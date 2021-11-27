@@ -4,6 +4,7 @@ from typing import Callable, Awaitable, Union, Optional
 import asyncio
 from aiohttp.web import Request, Response
 from limits.storage import MemoryStorage
+import limits.strategies
 
 
 def default_keyfunc(request: Request) -> str:
@@ -35,7 +36,9 @@ class RateLimitDecorator:
     Decorator to rate limit requests in the aiohttp.web framework
     """
 
-    def __init__(self, db: MemoryStorage, path_id: str, keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(self, db: MemoryStorage, path_id: str, moving_window: limits.strategies.MovingWindowRateLimiter,
+                 keyfunc: Callable, ratelimit: str, exempt_ips: Optional[set] = None,
+                 error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         calls, period = ratelimit.split("/")
         self._calls = calls
@@ -49,6 +52,19 @@ class RateLimitDecorator:
         self.error_handler = error_handler
         self.db = db
         self.path_id = path_id
+        self.moving_window = moving_window
+        if self.period >= 31_536_000:
+            self.item = limits.RateLimitItemPerYear(self.calls, self.period / 31_536_000)
+        elif self.period >= 2_628_000:
+            self.item = limits.RateLimitItemPerMonth(self.calls, self.period / 2_628_000)
+        elif self.period >= 86400:
+            self.item = limits.RateLimitItemPerDay(self.calls, self.period / 86400)
+        elif self.period >= 3600:
+            self.item = limits.RateLimitItemPerHour(self.calls, self.period / 3600)
+        elif self.period >= 60:
+            self.item = limits.RateLimitItemPerMinute(self.calls, self.period / 60)
+        else:
+            self.item = limits.RateLimitItemPerSecond(self.calls, self.period)
 
     def __call__(self, func: Callable) -> Awaitable:
         @wraps(func)
@@ -65,10 +81,11 @@ class RateLimitDecorator:
                     return await func(request)
 
                 # Returns a response if the number of calls exceeds the max amount of calls
-                if self.db.get(db_key) >= self.calls:
+                if not self.moving_window.test(self.item, db_key):
                     if self.error_handler is not None:
                         if asyncio.iscoroutinefunction(self.error_handler):
-                            r = await self.error_handler(request, RateLimitExceeded(**{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
+                            r = await self.error_handler(request, RateLimitExceeded(
+                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
                             if isinstance(r, Allow):
                                 return await func(request)
                             return r
@@ -86,7 +103,7 @@ class RateLimitDecorator:
                         "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
                     return response
 
-                self.db.incr(key=db_key, expiry=self.period)
+                self.moving_window.hit(self.item, db_key)
                 # Returns normal response if the user did not go over the rate limit
                 return await func(request)
             else:
@@ -95,7 +112,7 @@ class RateLimitDecorator:
                     return func(request)
 
                 # Returns a response if the number of calls exceeds the max amount of calls
-                if self.db.get(db_key) >= self.calls:
+                if not self.moving_window.test(self.item, db_key):
                     if self.error_handler is not None:
                         if asyncio.iscoroutinefunction(self.error_handler):
                             r = await self.error_handler(request, RateLimitExceeded(
@@ -117,7 +134,7 @@ class RateLimitDecorator:
                         "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
                     return response
 
-                self.db.incr(key=db_key, expiry=self.period)
+                self.moving_window.hit(self.item, db_key)
                 # Returns normal response if the user did not go over the rate limit
                 return func(request)
 
@@ -136,21 +153,25 @@ class Limiter:
     ```
     """
 
-    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(self, keyfunc: Callable, exempt_ips: Optional[set] = None,
+                 error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
         self.error_handler = error_handler
         self.db = MemoryStorage()
+        self.moving_window = limits.strategies.MovingWindowRateLimiter(self.db)
 
-    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
+    def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None,
+              error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
         def wrapper(func: Callable) -> Awaitable:
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
             _error_handler = self.error_handler or error_handler
-            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips, error_handler=_error_handler, db=self.db, path_id=path_id)(func)
+            return RateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips,
+                                      error_handler=_error_handler, db=self.db, path_id=path_id,
+                                      moving_window=self.moving_window)(func)
+
         return wrapper
 
     async def reset(self):
         self.db.reset()
-
-
