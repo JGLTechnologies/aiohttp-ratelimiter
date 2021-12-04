@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.5.0
+Version: 3.5.1
 Summary: A simple rate limiter for aiohttp.web
 Home-page: https://github.com/Nebulizer1213/aiohttp-ratelimiter
 Author: George Luca
@@ -127,10 +127,10 @@ def home(request):
 If you want to use Redis instead, use the RedisLimiter class. 
 
 ```python
-from aiohttplimiter import RedisLimiter
+from aiohttplimiter import RedisLimiter, default_keyfunc
 
 
-limiter = RedisLimiter(host="localhost", port=7562, password="1258")
+limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://:password@host:port")
 ```
 <p style="color: red;">
 RedisLimiter is still being tested and might not be stable for production.
