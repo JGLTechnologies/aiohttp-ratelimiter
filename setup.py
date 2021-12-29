@@ -25,7 +25,7 @@ setup(
     description="A simple rate limiter for aiohttp.web",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/Nebulizer1213/aiohttp-ratelimiter",
+    url="https://jgltechnologies.com/aiohttplimiter",
     author="George Luca",
     author_email="fixingg@gmail.com",
     license="MIT",
