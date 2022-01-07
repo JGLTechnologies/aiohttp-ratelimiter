@@ -10,7 +10,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "3.5.1"
+VERSION = "3.5.2"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -32,5 +32,5 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "limits", "redis"],
+    install_requires=["aiohttp", "limits", "coredis"],
 )

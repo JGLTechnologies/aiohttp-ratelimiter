@@ -115,11 +115,8 @@ If you want to use Redis instead, use the RedisLimiter class.
 from aiohttplimiter import RedisLimiter, default_keyfunc
 
 
-limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://:password@host:port")
+limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://username:password@host:port")
 ```
-<p style="color: red;">
-RedisLimiter is still being tested and might not be stable for production.
-</p>
 
 
 
