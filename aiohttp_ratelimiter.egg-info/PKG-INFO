@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 3.5.2
+Version: 3.5.3
 Summary: A simple rate limiter for aiohttp.web
 Home-page: https://jgltechnologies.com/aiohttplimiter
 Author: George Luca
@@ -12,6 +12,7 @@ Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Description-Content-Type: text/markdown
+License-File: LICENSE
 
 <a href="https://jgltechnologies.com/discord">
 <img src="https://discord.com/api/guilds/844418702430175272/embed.png">
@@ -26,7 +27,7 @@ on <a href="https://jgltechnologies.com/aiohttplimiter">our github</a>.
 
 Install from git
 ```
-python -m pip install git+https://github.com/Nebulizer1213/aiohttp-ratelimiter
+python -m pip install git+https://github.com/JGLTechnologies/aiohttp-ratelimiter
 ```
 
 Install from pypi

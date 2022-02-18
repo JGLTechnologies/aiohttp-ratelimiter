@@ -31,10 +31,10 @@ class Limiter:
             _keyfunc = keyfunc or self.keyfunc
             _error_handler = self.error_handler or error_handler
             return BaseRateLimitDecorator(keyfunc=_keyfunc, ratelimit=ratelimit, exempt_ips=_exempt_ips,
-                                      error_handler=_error_handler, db=self.db, path_id=path_id,
-                                      moving_window=self.moving_window)(func)
+                                          error_handler=_error_handler, db=self.db, path_id=path_id,
+                                          moving_window=self.moving_window)(func)
 
         return wrapper
 
     async def reset(self):
-        self.db.reset()
+        await self.db.reset()
