@@ -11,7 +11,7 @@ on <a href="https://jgltechnologies.com/aiohttplimiter">our github</a>.
 
 Install from git
 ```
-python -m pip install git+https://github.com/Nebulizer1213/aiohttp-ratelimiter
+python -m pip install git+https://github.com/JGLTechnologies/aiohttp-ratelimiter
 ```
 
 Install from pypi
