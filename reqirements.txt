@@ -1,4 +1,4 @@
 aiohttp
-aioredis
 limits
-aiomcache
+emcache
+coredis

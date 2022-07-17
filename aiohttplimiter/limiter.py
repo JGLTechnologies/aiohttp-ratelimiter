@@ -1,12 +1,11 @@
 from functools import wraps
 import json
-from typing import Callable, Awaitable, Union, Optional
+from typing import Callable, Awaitable, Union, Optional, Coroutine, Any
 import asyncio
 from aiohttp.web import Request, Response
 from limits.aio.storage import Storage, MemoryStorage
 from limits.aio.strategies import MovingWindowRateLimiter
-from limits import RateLimitItemPerYear, RateLimitItemPerMonth, RateLimitItemPerDay, RateLimitItemPerHour, \
-    RateLimitItemPerMinute, RateLimitItemPerSecond
+from limits import parse
 
 
 def default_keyfunc(request: Request) -> str:
@@ -38,33 +37,21 @@ class BaseRateLimitDecorator:
                  moving_window: MovingWindowRateLimiter, ratelimit: str,
                  exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
         self.exempt_ips = exempt_ips or set()
-        calls, period = ratelimit.split("/")
-        self._calls = calls
-        calls = int(calls)
-        period = int(period)
-        assert period > 0
-        assert calls > 0
-        self.period = period
+        self.item = parse(ratelimit)
+        calls = self.item.amount
+        if int(self.item.multiples) > 1:
+            self.amount = f"{calls} request(s) per {self.item.multiples} {self.item.GRANULARITY.name}s"
+        else:
+            self.amount = f"{calls} request(s) per {self.item.GRANULARITY.name}"
+        self.period = self.item.amount
         self.keyfunc = keyfunc
         self.calls = calls
         self.db = db
         self.error_handler = error_handler
         self.path_id = path_id
         self.moving_window = moving_window
-        if self.period >= 31_536_000:
-            self.item = RateLimitItemPerYear(self.calls, self.period / 31_536_000)
-        elif self.period >= 2_628_000:
-            self.item = RateLimitItemPerMonth(self.calls, self.period / 2_628_000)
-        elif self.period >= 86400:
-            self.item = RateLimitItemPerDay(self.calls, self.period / 86400)
-        elif self.period >= 3600:
-            self.item = RateLimitItemPerHour(self.calls, self.period / 3600)
-        elif self.period >= 60:
-            self.item = RateLimitItemPerMinute(self.calls, self.period / 60)
-        else:
-            self.item = RateLimitItemPerSecond(self.calls, self.period)
 
-    def __call__(self, func: Union[Callable, Awaitable]) -> Awaitable:
+    def __call__(self, func: Union[Callable, Awaitable]) -> Coroutine[Any, Any, Response]:
         @wraps(func)
         async def wrapper(request: Request) -> Response:
             key = self.keyfunc(request)
@@ -74,69 +61,37 @@ class BaseRateLimitDecorator:
                 if not await self.db.check():
                     await self.db.reset()
 
+            # Checks if the user's IP is in the set of exempt IPs
+            if default_keyfunc(request) in self.exempt_ips:
+                return await func(request)
+
+            # Returns a response if the number of calls exceeds the max amount of calls
+            if not await self.moving_window.test(self.item, db_key):
+                if self.error_handler is not None:
+                    if asyncio.iscoroutinefunction(self.error_handler):
+                        r = await self.error_handler(request, RateLimitExceeded(self.amount))
+                        if isinstance(r, Allow):
+                            return await func(request)
+                        return r
+                    else:
+                        r = self.error_handler(request, RateLimitExceeded(self.amount))
+                        if isinstance(r, Allow):
+                            return await func(request)
+                        return r
+                data = json.dumps(
+                    {"error": f"Rate limit exceeded: {self.amount}"})
+                response = Response(
+                    text=data, content_type="application/json", status=429)
+                response.headers.add(
+                    "error", f"Rate limit exceeded: {self.amount}")
+                return response
+
+            # Increments the number of calls by 1
+            await self.moving_window.hit(self.item, db_key)
+            # Returns normal response if the user did not go over the rate limit
             if asyncio.iscoroutinefunction(func):
-                # Checks if the user's IP is in the set of exempt IPs
-                if default_keyfunc(request) in self.exempt_ips:
-                    return await func(request)
-
-                # Returns a response if the number of calls exceeds the max amount of calls
-                if not await self.moving_window.test(self.item, db_key):
-                    if self.error_handler is not None:
-                        if asyncio.iscoroutinefunction(self.error_handler):
-                            r = await self.error_handler(request, RateLimitExceeded(
-                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                            if isinstance(r, Allow):
-                                return await func(request)
-                            return r
-                        else:
-                            r = self.error_handler(request, RateLimitExceeded(
-                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                            if isinstance(r, Allow):
-                                return await func(request)
-                            return r
-                    data = json.dumps(
-                        {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
-                    response = Response(
-                        text=data, content_type="application/json", status=429)
-                    response.headers.add(
-                        "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
-                    return response
-
-                # Increments the number of calls by 1
-                await self.moving_window.hit(self.item, db_key)
-                # Returns normal response if the user did not go over the rate limit
                 return await func(request)
             else:
-                # Checks if the user's IP is in the set of exempt IPs
-                if default_keyfunc(request) in self.exempt_ips:
-                    return func(request)
-
-                # Returns a response if the number of calls exceeds the max amount of calls
-                if not await self.moving_window.test(self.item, db_key):
-                    if self.error_handler is not None:
-                        if asyncio.iscoroutinefunction(self.error_handler):
-                            r = await self.error_handler(request, RateLimitExceeded(
-                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                            if isinstance(r, Allow):
-                                return func(request)
-                            return r
-                        else:
-                            r = self.error_handler(request, RateLimitExceeded(
-                                **{"detail": f"{self._calls} request(s) per {self.period} second(s)"}))
-                            if isinstance(r, Allow):
-                                return func(request)
-                            return r
-                    data = json.dumps(
-                        {"error": f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)"})
-                    response = Response(
-                        text=data, content_type="application/json", status=429)
-                    response.headers.add(
-                        "error", f"Rate limit exceeded: {self._calls} request(s) per {self.period} second(s)")
-                    return response
-
-                # Increments the number of calls by 1
-                await self.moving_window.hit(self.item, db_key)
-                # Returns normal response if the user did not go over the rate limit
                 return func(request)
 
         return wrapper

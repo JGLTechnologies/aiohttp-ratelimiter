@@ -1,14 +1,13 @@
 from typing import Callable, Awaitable, Union, Optional
-import coredis
-from limits.aio.storage import RedisStorage
+from limits.aio.storage import MemcachedStorage
 from .limiter import BaseRateLimitDecorator
 from limits.aio.strategies import MovingWindowRateLimiter
 
 
-class RedisLimiter:
+class MemcachedLimiter:
     """
     ```
-    limiter = RedisLimiter(keyfunc=your_keyfunc, uri="localhost:6379")
+    limiter = MemcachedLimiter(keyfunc=your_keyfunc, uri="memcached://localhost:11211")
     @routes.get("/")
     @limiter.limit("5/1")
     def foo():
@@ -18,10 +17,10 @@ class RedisLimiter:
 
     def __init__(self, keyfunc: Callable, uri: str, exempt_ips: Optional[set] = None,
                  error_handler: Optional[Union[Callable, Awaitable]] = None,
-                 connection_pool: Optional[coredis.ConnectionPool] = None, **options: Union[float, str, bool]) -> None:
+                 **options: Union[float, str, bool]) -> None:
         self.exempt_ips = exempt_ips or set()
         self.keyfunc = keyfunc
-        self.db = RedisStorage(uri, connection_pool, **options)
+        self.db = MemcachedStorage(uri, **options)
         self.moving_window = MovingWindowRateLimiter(self.db)
         self.error_handler = error_handler
 

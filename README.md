@@ -5,7 +5,7 @@
 # aiohttp-ratelimiter
 
 aiohttp-ratelimiter is a rate limiter for the aiohttp.web framework.
-This is a new library and we are always looking for people to contribute. If you see something wrong with the code or want to add a feature, please create a pull request 
+This is a new library, and we are always looking for people to contribute. If you see something wrong with the code or want to add a feature, please create a pull request 
 on <a href="https://jgltechnologies.com/aiohttplimiter">our github</a>.
 
 
@@ -26,16 +26,21 @@ Example
 
 ```python
 from aiohttp import web
-from aiohttplimiter import default_keyfunc, Limiter
+from aiohttplimiter import default_keyfunc, Limiter, RedisLimiter, MemcachedLimiter
 
 app = web.Application()
 routes = web.RouteTableDef()
 
+# In Memory
 limiter = Limiter(keyfunc=default_keyfunc)
+# Redis
+limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://localhost:6379")
+# Memcached
+limiter = MemcachedLimiter(keyfunc=default_keyfunc, uri="redis://localhost:11211")
 
 @routes.get("/")
 # This endpoint can only be requested 1 time per second per IP address
-@limiter.limit("1/1")
+@limiter.limit("1/second")
 async def home(request):
     return web.Response(text="test")
 
@@ -59,7 +64,7 @@ routes = web.RouteTableDef()
 limiter = Limiter(keyfunc=default_keyfunc, exempt_ips={"192.168.1.245"})
 
 @routes.get("/")
-@limiter.limit("1/1")
+@limiter.limit("3/5minutes")
 async def test(request):
     return web.Response(text="test")
 
@@ -79,7 +84,7 @@ def handler(request: web.Request, exc: RateLimitExceeded):
     # If for some reason you want to allow the request, return aiohttplimitertest.Allow().
     if some_condition:
         return Allow()
-    return web.Response(text="Too many requests", status=429)
+    return web.Response(text=f"Too many requests", status=429)
 
 limiter = Limiter(keyfunc=default_keyfunc, error_handler=handler)
 ```
@@ -90,7 +95,7 @@ If multiple paths use one handler like this:
 ```python
 @routes.get("/")
 @routes.get("/home")
-@limiter.limit("5/1")
+@limiter.limit("5/hour")
 def home(request):
     return web.Response(text="Hello")
 ```
@@ -102,20 +107,9 @@ Then they will have separate rate limits. To prevent this use the path_id kwarg.
 ```python
 @routes.get("/")
 @routes.get("/home")
-@limiter.limit("5/1", path_id="home")
+@limiter.limit("2/3days", path_id="home")
 def home(request):
     return web.Response(text="Hello")
-```
-
-<br>
-
-If you want to use Redis instead, use the RedisLimiter class. 
-
-```python
-from aiohttplimiter import RedisLimiter, default_keyfunc
-
-
-limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://username:password@host:port")
 ```
 
 
