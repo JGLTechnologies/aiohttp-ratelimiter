@@ -36,7 +36,7 @@ limiter = Limiter(keyfunc=default_keyfunc)
 # Redis
 limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://localhost:6379")
 # Memcached
-limiter = MemcachedLimiter(keyfunc=default_keyfunc, uri="redis://localhost:11211")
+limiter = MemcachedLimiter(keyfunc=default_keyfunc, uri="memcached://localhost:11211")
 
 @routes.get("/")
 # This endpoint can only be requested 1 time per second per IP address
