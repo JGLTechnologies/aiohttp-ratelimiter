@@ -1,4 +1,8 @@
 aiohttp
 limits
-coredis
+
+[memcached]
 emcache
+
+[redis]
+coredis

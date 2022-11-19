@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 4.0.0
+Version: 4.0.1
 Summary: A simple rate limiter for aiohttp.web
 Home-page: https://jgltechnologies.com/aiohttplimiter
 Author: George Luca
@@ -12,6 +12,8 @@ Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Description-Content-Type: text/markdown
+Provides-Extra: memcached
+Provides-Extra: redis
 License-File: LICENSE
 
 <a href="https://jgltechnologies.com/discord">
@@ -33,6 +35,10 @@ python -m pip install git+https://github.com/JGLTechnologies/aiohttp-ratelimiter
 Install from pypi
 ```
 python -m pip install aiohttp-ratelimiter
+// if redis is being used
+python -m pip install aiohttp-ratelimiter[redis]
+// if memcached is being used
+python -m pip install aiohttp-ratelimiter[memcached]
 ```
 
 <br>
@@ -52,7 +58,7 @@ limiter = Limiter(keyfunc=default_keyfunc)
 # Redis
 limiter = RedisLimiter(keyfunc=default_keyfunc, uri="redis://localhost:6379")
 # Memcached
-limiter = MemcachedLimiter(keyfunc=default_keyfunc, uri="redis://localhost:11211")
+limiter = MemcachedLimiter(keyfunc=default_keyfunc, uri="memcached://localhost:11211")
 
 @routes.get("/")
 # This endpoint can only be requested 1 time per second per IP address

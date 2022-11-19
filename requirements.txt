@@ -1,4 +1,2 @@
 aiohttp
 limits
-emcache
-coredis

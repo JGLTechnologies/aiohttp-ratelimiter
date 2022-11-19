@@ -10,7 +10,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "4.0.0"
+VERSION = "4.0.1"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -32,5 +32,6 @@ setup(
     classifiers=classifiers,
     keywords="",
     packages=find_packages(),
-    install_requires=["aiohttp", "limits", "coredis", "emcache"],
+    extras_require={"memcached": ["emcache"], "redis": ["coredis"]},
+    install_requires=["aiohttp", "limits"]
 )

@@ -17,6 +17,10 @@ python -m pip install git+https://github.com/JGLTechnologies/aiohttp-ratelimiter
 Install from pypi
 ```
 python -m pip install aiohttp-ratelimiter
+// if redis is being used
+python -m pip install aiohttp-ratelimiter[redis]
+// if memcached is being used
+python -m pip install aiohttp-ratelimiter[memcached]
 ```
 
 <br>
