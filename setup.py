@@ -10,7 +10,7 @@ def get_long_description():
         return file.read()
 
 
-VERSION = "4.0.1"
+VERSION = "4.1.1"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",

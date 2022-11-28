@@ -30,7 +30,9 @@ Example
 
 ```python
 from aiohttp import web
-from aiohttplimiter import default_keyfunc, Limiter, RedisLimiter, MemcachedLimiter
+from aiohttplimiter import default_keyfunc, Limiter
+from aiohttplimiter.redis_limiter import RedisLimiter
+from aiohttplimiter.memcached_limiter import MemcachedLimiter
 
 app = web.Application()
 routes = web.RouteTableDef()
@@ -114,6 +116,18 @@ Then they will have separate rate limits. To prevent this use the path_id kwarg.
 @limiter.limit("2/3days", path_id="home")
 def home(request):
     return web.Response(text="Hello")
+```
+
+<br>
+
+Views Example 
+
+```python
+@routes.view("/")
+class Home(View):
+    @limiter.limit("1/second")
+    def get(self: web.Request):
+        return web.Response(text="hello")
 ```
 
 

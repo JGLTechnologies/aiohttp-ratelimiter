@@ -2,16 +2,18 @@ from functools import wraps
 import json
 from typing import Callable, Awaitable, Union, Optional, Coroutine, Any
 import asyncio
-from aiohttp.web import Request, Response
+from aiohttp.web import Request, Response, View
 from limits.aio.storage import Storage, MemoryStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 from limits import parse
 
 
-def default_keyfunc(request: Request) -> str:
+def default_keyfunc(request: Union[Request, View]) -> str:
     """
     Returns the user's IP
     """
+    if isinstance(request, View):
+        request = request.request
     ip = request.headers.get(
         "X-Forwarded-For") or request.remote or "127.0.0.1"
     ip = ip.split(",")[0]
@@ -51,9 +53,11 @@ class BaseRateLimitDecorator:
         self.path_id = path_id
         self.moving_window = moving_window
 
-    def __call__(self, func: Union[Callable, Awaitable]) -> Coroutine[Any, Any, Response]:
+    def __call__(self, func: Union[Callable, Awaitable]) -> Callable[[Union[Request, View]], Coroutine[Any, Any, Response]]:
         @wraps(func)
-        async def wrapper(request: Request) -> Response:
+        async def wrapper(request: Union[Request, View]) -> Response:
+            if isinstance(request, View):
+                request = request.request
             key = self.keyfunc(request)
             db_key = f"{key}:{self.path_id or request.path}"
 

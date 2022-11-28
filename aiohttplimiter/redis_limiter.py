@@ -1,5 +1,6 @@
-from typing import Callable, Awaitable, Union, Optional
+from typing import Callable, Awaitable, Union, Optional, Any, Coroutine
 import coredis
+from aiohttp.web import Request, Response, View
 from limits.aio.storage import RedisStorage
 from .limiter import BaseRateLimitDecorator
 from limits.aio.strategies import MovingWindowRateLimiter
@@ -27,7 +28,7 @@ class RedisLimiter:
 
     def limit(self, ratelimit: str, keyfunc: Callable = None, exempt_ips: Optional[set] = None,
               error_handler: Optional[Union[Callable, Awaitable]] = None, path_id: str = None) -> Callable:
-        def wrapper(func: Callable) -> Awaitable:
+        def wrapper(func: Callable) -> Callable[[Union[Request, View]], Coroutine[Any, Any, Response]]:
             _exempt_ips = exempt_ips or self.exempt_ips
             _keyfunc = keyfunc or self.keyfunc
             _error_handler = self.error_handler or error_handler
