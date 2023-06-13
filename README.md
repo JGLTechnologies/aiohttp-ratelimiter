@@ -126,7 +126,7 @@ Views Example
 @routes.view("/")
 class Home(View):
     @limiter.limit("1/second")
-    def get(self: web.Request):
+    def get(self):
         return web.Response(text="hello")
 ```
 

@@ -55,9 +55,11 @@ class BaseRateLimitDecorator:
 
     def __call__(self, func: Union[Callable, Awaitable]) -> Callable[[Union[Request, View]], Coroutine[Any, Any, Response]]:
         @wraps(func)
-        async def wrapper(request: Union[Request, View]) -> Response:
-            if isinstance(request, View):
-                request = request.request
+        async def wrapper(ctx: Union[Request, View]) -> Response:
+            if isinstance(ctx, View):
+                request = ctx.request
+            else:
+                request = ctx
             key = self.keyfunc(request)
             db_key = f"{key}:{self.path_id or request.path}"
 
@@ -94,8 +96,8 @@ class BaseRateLimitDecorator:
             await self.moving_window.hit(self.item, db_key)
             # Returns normal response if the user did not go over the rate limit
             if asyncio.iscoroutinefunction(func):
-                return await func(request)
+                return await func(ctx)
             else:
-                return func(request)
+                return func(ctx)
 
         return wrapper
