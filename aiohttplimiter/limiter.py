@@ -8,12 +8,14 @@ from limits.aio.strategies import MovingWindowRateLimiter
 from limits import parse
 
 
-def default_keyfunc(request: Union[Request, View]) -> str:
+def default_keyfunc(ctx: Union[Request, View]) -> str:
     """
     Returns the user's IP
     """
-    if isinstance(request, View):
-        request = request.request
+    if isinstance(ctx, View):
+        request = ctx.request
+    else:
+        request = ctx
     ip = request.headers.get(
         "X-Forwarded-For") or request.remote or "127.0.0.1"
     ip = ip.split(",")[0]

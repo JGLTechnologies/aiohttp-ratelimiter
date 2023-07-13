@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aiohttp-ratelimiter
-Version: 4.1.1
+Version: 4.1.2
 Summary: A simple rate limiter for aiohttp.web
 Home-page: https://jgltechnologies.com/aiohttplimiter
 Author: George Luca
@@ -144,7 +144,7 @@ Views Example
 @routes.view("/")
 class Home(View):
     @limiter.limit("1/second")
-    def get(self: web.Request):
+    def get(self):
         return web.Response(text="hello")
 ```
 
