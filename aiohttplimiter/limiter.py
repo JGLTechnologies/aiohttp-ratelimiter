@@ -1,4 +1,5 @@
 from functools import wraps
+import ipaddress
 import json
 from typing import Callable, Awaitable, Union, Optional, Coroutine, Any
 import asyncio
@@ -70,8 +71,10 @@ class BaseRateLimitDecorator:
                     await self.db.reset()
 
             # Checks if the user's IP is in the set of exempt IPs
-            if default_keyfunc(request) in self.exempt_ips:
+            ip_address = ipaddress.ip_address(default_keyfunc(request))
+            if any([ip_address in ipaddress.ip_network(net) for net in self.exempt_ips]):
                 return await func(request)
+            del ip_address
 
             # Returns a response if the number of calls exceeds the max amount of calls
             if not await self.moving_window.test(self.item, db_key):
