@@ -1,8 +1,10 @@
-from typing import Callable, Awaitable, Union, Optional, Any, Coroutine
+from typing import Any, Awaitable, Callable, Coroutine, Optional, Union
+
 from aiohttp.web import Request, Response, View
 from limits.aio.storage import MemcachedStorage
-from .limiter import BaseRateLimitDecorator
 from limits.aio.strategies import MovingWindowRateLimiter
+
+from .limiter import BaseRateLimitDecorator
 
 
 class MemcachedLimiter:

@@ -1,2 +1,2 @@
-from .limiter import default_keyfunc, Allow, RateLimitExceeded
+from .limiter import Allow, RateLimitExceeded, default_keyfunc
 from .memory_limiter import Limiter

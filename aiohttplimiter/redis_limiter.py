@@ -1,9 +1,11 @@
-from typing import Callable, Awaitable, Union, Optional, Any, Coroutine
+from typing import Any, Awaitable, Callable, Coroutine, Optional, Union
+
 import coredis
 from aiohttp.web import Request, Response, View
 from limits.aio.storage import RedisStorage
-from .limiter import BaseRateLimitDecorator
 from limits.aio.strategies import MovingWindowRateLimiter
+
+from .limiter import BaseRateLimitDecorator
 
 
 class RedisLimiter:
