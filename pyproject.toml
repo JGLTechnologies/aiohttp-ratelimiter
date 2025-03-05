@@ -21,8 +21,8 @@ classifiers = [
 dynamic = ["dependencies", "version"]
 
 [project.optional-dependencies]
-memcached = ["emcache"]
-redis = ["coredis"]
+memcached = ["emcache; python_version >= '3.8' and platform_system != 'Windows'"]
+redis = ["coredis; python_version >= '3.9'"]
 
 [project.urls]
 Homepage = "https://jgltechnologies.com/aiohttplimiter"
