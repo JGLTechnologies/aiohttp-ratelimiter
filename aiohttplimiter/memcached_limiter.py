@@ -18,7 +18,7 @@ class MemcachedLimiter:
     routes = RouteTableDef()
     limiter = MemcachedLimiter(keyfunc=your_keyfunc, uri="memcached://localhost:11211")
     @routes.get("/")
-    @limiter.limit("5/1")
+    @limiter.limit("5/second")
     async def foo():
         return Response(text="Hello World")
     ```

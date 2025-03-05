@@ -21,7 +21,7 @@ class RedisLimiter:
     routes = RouteTableDef()
     limiter = RedisLimiter(keyfunc=your_keyfunc, uri="localhost:6379")
     @routes.get("/")
-    @limiter.limit("5/1")
+    @limiter.limit("5/second")
     async def foo():
         return Response(text="Hello World")
     ```

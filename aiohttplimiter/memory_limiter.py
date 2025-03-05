@@ -19,7 +19,7 @@ class Limiter:
     limiter = Limiter(keyfunc=your_keyfunc)
 
     @routes.get("/")
-    @limiter.limit("5/1")
+    @limiter.limit("5/second")
     async def foo():
         return Response(text="Hello World")
     ```
