@@ -4,7 +4,7 @@ import functools
 import json
 
 from collections.abc import Callable, Awaitable, Coroutine
-from typing import Any
+from typing import Any, Union, Type
 
 from aiohttp.abc import AbstractView
 from aiohttp.web import Request, Response, StreamResponse
@@ -19,7 +19,7 @@ __all__ = (
     "default_keyfunc"
 )
 
-RouteHandler = type[AbstractView] | Callable[[Request], Awaitable[StreamResponse]]
+RouteHandler = Union[Type[AbstractView], Callable[[Request], Awaitable[StreamResponse]]]
 ErrorHandler = Callable[[Request, "RateLimitExceeded"], Awaitable["Allow | StreamResponse"]]
 KeyFunc = Callable[[Request], str]
 
