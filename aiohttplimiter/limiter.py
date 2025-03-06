@@ -5,8 +5,8 @@ import inspect
 import json
 import sys
 
-from collections.abc import Callable, Awaitable, Coroutine
-from typing import Any
+from collections.abc import Callable, Awaitable
+from typing import TypeVar
 
 from aiohttp.abc import AbstractView
 from aiohttp.web import Request, Response, StreamResponse
@@ -15,9 +15,9 @@ from limits.aio.strategies import MovingWindowRateLimiter
 from limits import parse
 
 if sys.version_info >= (3, 10):
-    from typing import TypeAlias
+    from typing import ParamSpec, TypeAlias
 else:
-    from typing_extensions import TypeAlias
+    from typing_extensions import ParamSpec, TypeAlias
 
 __all__ = (
     "Allow",
@@ -25,9 +25,15 @@ __all__ = (
     "default_keyfunc"
 )
 
-RouteHandler: TypeAlias = "type[AbstractView] | Callable[[Request], Awaitable[StreamResponse]] | Callable[[Request], StreamResponse]"
-ErrorHandler: TypeAlias = "Callable[[Request, RateLimitExceeded], Awaitable[Allow | StreamResponse]] | Callable[[Request, RateLimitExceeded], Allow | StreamResponse]"
-KeyFunc: TypeAlias = "Callable[[Request], str]"
+P = ParamSpec("P")
+R = TypeVar("R")
+ViewOrRequestT = TypeVar("ViewOrRequestT", bound="AbstractView | Request")
+
+Callback: TypeAlias = "Callable[P, Awaitable[R]] | Callable[P, R]"
+AsyncHandler: TypeAlias = "Callable[[ViewOrRequestT], Awaitable[StreamResponse]]"
+RouteHandler: TypeAlias = "Callback[[ViewOrRequestT], StreamResponse]"
+ErrorHandler: TypeAlias = "Callback[[Request, RateLimitExceeded], Allow | StreamResponse]"
+KeyFunc: TypeAlias = "Callback[[Request], str]"
 
 
 def default_keyfunc(request: Request) -> str:
@@ -78,9 +84,10 @@ class BaseRateLimitDecorator:
         self.path_id = path_id
         self.moving_window = moving_window
 
-    def __call__(self, func: RouteHandler) -> Callable[[Request], Coroutine[Any, Any, StreamResponse]]:
+    def __call__(self, func: RouteHandler[ViewOrRequestT]) -> AsyncHandler[ViewOrRequestT]:
         @functools.wraps(func)
-        async def wrapper(request: Request) -> StreamResponse:
+        async def wrapper(ctx: ViewOrRequestT) -> StreamResponse:
+            request = ctx.request if isinstance(ctx, AbstractView) else ctx
             key = self.keyfunc(request)
             db_key = f"{key}:{self.path_id or request.path}"
 
@@ -90,7 +97,7 @@ class BaseRateLimitDecorator:
 
             # Checks if the user's IP is in the set of exempt IPs
             if default_keyfunc(request) in self.exempt_ips:
-                response = func(request)
+                response = func(ctx)
                 if inspect.isawaitable(response):
                     response = await response
                 return response
@@ -98,14 +105,15 @@ class BaseRateLimitDecorator:
             # Returns a response if the number of calls exceeds the max amount of calls
             if not await self.moving_window.test(self.item, db_key):
                 if self.error_handler is not None:
-                    response = self.error_handler(request, RateLimitExceeded(self.amount))
-                    if inspect.isawaitable(response):
-                        response = await response
-                    if isinstance(response, Allow):
-                        response = func(request)
+                    error_response = self.error_handler(request, RateLimitExceeded(self.amount))
+                    if inspect.isawaitable(error_response):
+                        error_response = await error_response
+                    if isinstance(error_response, Allow):
+                        response = func(ctx)
                         if inspect.isawaitable(response):
                             response = await response
-                    return response
+                        return response
+                    return error_response
                 data = json.dumps(
                     {"error": f"Rate limit exceeded: {self.amount}"})
                 response = Response(
@@ -117,7 +125,7 @@ class BaseRateLimitDecorator:
             # Increments the number of calls by 1
             await self.moving_window.hit(self.item, db_key)
             # Returns normal response if the user did not go over the rate limit
-            response = func(request)
+            response = func(ctx)
             if inspect.isawaitable(response):
                 response = await response
             return response

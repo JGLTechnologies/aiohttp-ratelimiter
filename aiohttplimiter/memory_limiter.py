@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
-from typing import Any
+from collections.abc import Callable
+from typing import TypeVar
 
-from aiohttp.web import Request, StreamResponse
+from aiohttp.abc import AbstractView
+from aiohttp.web import Request
 from limits.aio.storage import MemoryStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 
-from aiohttplimiter.limiter import BaseRateLimitDecorator, KeyFunc, ErrorHandler, RouteHandler
+from aiohttplimiter.limiter import AsyncHandler, BaseRateLimitDecorator, KeyFunc, ErrorHandler, RouteHandler
 
 __all__ = ("Limiter",)
+
+ViewOrRequestT = TypeVar("ViewOrRequestT", bound="AbstractView | Request")
 
 
 class Limiter:
@@ -44,8 +47,8 @@ class Limiter:
         exempt_ips: set[str] | None = None,
         error_handler: ErrorHandler | None = None,
         path_id: str | None = None
-    ) -> Callable[[RouteHandler], Callable[[Request], Coroutine[Any, Any, StreamResponse]]]:
-        def wrapper(func: RouteHandler) -> Callable[[Request], Coroutine[Any, Any, StreamResponse]]:
+    ) -> Callable[[RouteHandler[ViewOrRequestT]], AsyncHandler[ViewOrRequestT]]:
+        def wrapper(func: RouteHandler[ViewOrRequestT]) -> AsyncHandler[ViewOrRequestT]:
             return BaseRateLimitDecorator(
                 keyfunc=keyfunc or self.keyfunc,
                 ratelimit=ratelimit,

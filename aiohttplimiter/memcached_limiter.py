@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
-from typing import Any
+from collections.abc import Callable
+from typing import TypeVar
 
-from aiohttp.web import Request, StreamResponse
+from aiohttp.abc import AbstractView
+from aiohttp.web import Request
 from limits.aio.storage import MemcachedStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 
-from aiohttplimiter.limiter import BaseRateLimitDecorator, ErrorHandler, KeyFunc, RouteHandler
+from aiohttplimiter.limiter import AsyncHandler, BaseRateLimitDecorator, ErrorHandler, KeyFunc, RouteHandler
 
 __all__ = ("MemcachedLimiter",)
+
+ViewOrRequestT = TypeVar("ViewOrRequestT", bound="AbstractView | Request")
 
 
 class MemcachedLimiter:
@@ -45,17 +48,14 @@ class MemcachedLimiter:
         exempt_ips: set[str] | None = None,
         error_handler: ErrorHandler | None = None,
         path_id: str | None = None
-    ) -> Callable[[RouteHandler], Callable[[Request], Coroutine[Any, Any, StreamResponse]]]:
-        def wrapper(func: RouteHandler) -> Callable[[Request], Coroutine[Any, Any, StreamResponse]]:
-            _exempt_ips = exempt_ips or self.exempt_ips
-            _keyfunc = keyfunc or self.keyfunc
-            _error_handler = self.error_handler or error_handler
+    ) -> Callable[[RouteHandler[ViewOrRequestT]], AsyncHandler[ViewOrRequestT]]:
+        def wrapper(func: RouteHandler[ViewOrRequestT]) -> AsyncHandler[ViewOrRequestT]:
             return BaseRateLimitDecorator(
                 db=self.db,
-                keyfunc=_keyfunc,
+                keyfunc=keyfunc or self.keyfunc,
                 ratelimit=ratelimit,
-                exempt_ips=_exempt_ips,
-                error_handler=_error_handler,
+                exempt_ips=exempt_ips or self.exempt_ips,
+                error_handler=self.error_handler or error_handler,
                 path_id=path_id,
                 moving_window=self.moving_window
             )(func)
