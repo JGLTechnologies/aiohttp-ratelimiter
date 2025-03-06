@@ -89,6 +89,8 @@ class BaseRateLimitDecorator:
         async def wrapper(ctx: ViewOrRequestT) -> StreamResponse:
             request = ctx.request if isinstance(ctx, AbstractView) else ctx
             key = self.keyfunc(request)
+            if inspect.isawaitable(key):
+                key = await key
             db_key = f"{key}:{self.path_id or request.path}"
 
             if isinstance(self.db, MemoryStorage):
