@@ -1,6 +1,6 @@
-from aiohttplimiter.limiter import *  # default_keyfunc, Allow, RateLimitExceeded
-from aiohttplimiter.memory_limiter import *  # Limiter
-from aiohttplimiter.memcached_limiter import *  # MemcachedLimiter
-from aiohttplimiter.redis_limiter import *  # RedisLimiter
+from aiohttplimiter.limiter import *
+from aiohttplimiter.memory_limiter import *
+from aiohttplimiter.memcached_limiter import *
+from aiohttplimiter.redis_limiter import *
 
 __version__ = "4.1.2"
