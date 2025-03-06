@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiohttp-ratelimiter"
+description = "A simple rate limiter for aiohttp.web"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+authors = [
+    { name = "George Luca", email = "fixingg@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed"
+]
+dynamic = ["dependencies", "version"]
+
+[project.optional-dependencies]
+memcached = ["emcache"]
+redis = ["coredis"]
+
+[project.urls]
+Homepage = "https://jgltechnologies.com/aiohttplimiter"
+Repository = "https://github.com/JGLTechnologies/aiohttp-ratelimiter"
+Issues = "https://github.com/JGLTechnologies/aiohttp-ratelimiter/issues"
+
+[tool.setuptools.dynamic]
+version = {attr="aiohttplimiter.__version__"}
+dependencies = {file="requirements.txt"}
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.mypy]
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true

@@ -1,30 +1,46 @@
-from functools import wraps
+from __future__ import annotations
+
+import functools
+import inspect
 import json
-from typing import Callable, Awaitable, Union, Optional, Coroutine, Any
-import asyncio
-from aiohttp.web import Request, Response, View
+import sys
+
+from collections.abc import Callable, Awaitable, Coroutine
+from typing import Any
+
+from aiohttp.abc import AbstractView
+from aiohttp.web import Request, Response, StreamResponse
 from limits.aio.storage import Storage, MemoryStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 from limits import parse
 
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
-def default_keyfunc(ctx: Union[Request, View]) -> str:
+__all__ = (
+    "Allow",
+    "RateLimitExceeded",
+    "default_keyfunc"
+)
+
+RouteHandler: TypeAlias = "type[AbstractView] | Callable[[Request], Awaitable[StreamResponse]] | Callable[[Request], StreamResponse]"
+ErrorHandler: TypeAlias = "Callable[[Request, RateLimitExceeded], Awaitable[Allow | StreamResponse]] | Callable[[Request, RateLimitExceeded], Allow | StreamResponse]"
+KeyFunc: TypeAlias = "Callable[[Request], str]"
+
+
+def default_keyfunc(request: Request) -> str:
     """
     Returns the user's IP
     """
-    if isinstance(ctx, View):
-        request = ctx.request
-    else:
-        request = ctx
-    ip = request.headers.get(
-        "X-Forwarded-For") or request.remote or "127.0.0.1"
+    ip = request.headers.get("X-Forwarded-For") or request.remote or "127.0.0.1"
     ip = ip.split(",")[0]
     return ip
 
 
 class Allow:
-    def __init__(self) -> None:
-        pass
+    pass
 
 
 class RateLimitExceeded:
@@ -32,14 +48,21 @@ class RateLimitExceeded:
         self._detail = detail
 
     @property
-    def detail(self):
+    def detail(self) -> str:
         return self._detail
 
 
 class BaseRateLimitDecorator:
-    def __init__(self, db: Storage, path_id: str, keyfunc: Callable,
-                 moving_window: MovingWindowRateLimiter, ratelimit: str,
-                 exempt_ips: Optional[set] = None, error_handler: Optional[Union[Callable, Awaitable]] = None) -> None:
+    def __init__(
+        self,
+        db: Storage,
+        path_id: str | None,
+        keyfunc: KeyFunc,
+        moving_window: MovingWindowRateLimiter,
+        ratelimit: str,
+        exempt_ips: set[str] | None = None,
+        error_handler: ErrorHandler | None = None
+    ) -> None:
         self.exempt_ips = exempt_ips or set()
         self.item = parse(ratelimit)
         calls = self.item.amount
@@ -55,13 +78,9 @@ class BaseRateLimitDecorator:
         self.path_id = path_id
         self.moving_window = moving_window
 
-    def __call__(self, func: Union[Callable, Awaitable]) -> Callable[[Union[Request, View]], Coroutine[Any, Any, Response]]:
-        @wraps(func)
-        async def wrapper(ctx: Union[Request, View]) -> Response:
-            if isinstance(ctx, View):
-                request = ctx.request
-            else:
-                request = ctx
+    def __call__(self, func: RouteHandler) -> Callable[[Request], Coroutine[Any, Any, StreamResponse]]:
+        @functools.wraps(func)
+        async def wrapper(request: Request) -> StreamResponse:
             key = self.keyfunc(request)
             db_key = f"{key}:{self.path_id or request.path}"
 
@@ -71,21 +90,22 @@ class BaseRateLimitDecorator:
 
             # Checks if the user's IP is in the set of exempt IPs
             if default_keyfunc(request) in self.exempt_ips:
-                return await func(request)
+                response = func(request)
+                if inspect.isawaitable(response):
+                    response = await response
+                return response
 
             # Returns a response if the number of calls exceeds the max amount of calls
             if not await self.moving_window.test(self.item, db_key):
                 if self.error_handler is not None:
-                    if asyncio.iscoroutinefunction(self.error_handler):
-                        r = await self.error_handler(request, RateLimitExceeded(self.amount))
-                        if isinstance(r, Allow):
-                            return await func(request)
-                        return r
-                    else:
-                        r = self.error_handler(request, RateLimitExceeded(self.amount))
-                        if isinstance(r, Allow):
-                            return await func(request)
-                        return r
+                    response = self.error_handler(request, RateLimitExceeded(self.amount))
+                    if inspect.isawaitable(response):
+                        response = await response
+                    if isinstance(response, Allow):
+                        response = func(request)
+                        if inspect.isawaitable(response):
+                            response = await response
+                    return response
                 data = json.dumps(
                     {"error": f"Rate limit exceeded: {self.amount}"})
                 response = Response(
@@ -97,9 +117,9 @@ class BaseRateLimitDecorator:
             # Increments the number of calls by 1
             await self.moving_window.hit(self.item, db_key)
             # Returns normal response if the user did not go over the rate limit
-            if asyncio.iscoroutinefunction(func):
-                return await func(ctx)
-            else:
-                return func(ctx)
+            response = func(request)
+            if inspect.isawaitable(response):
+                response = await response
+            return response
 
         return wrapper
