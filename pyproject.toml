@@ -9,7 +9,7 @@ readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.7"
 license = {file = "LICENSE"}
 authors = [
-    { name = "George Luca", email = "fixingg@gmail.com" },
+    { name = "George Luca", email = "gluca@jgltechnologies.com" },
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
