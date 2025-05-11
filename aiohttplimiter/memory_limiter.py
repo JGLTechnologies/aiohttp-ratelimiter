@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeVar
+from typing import TypeVar, Union
 
-from aiohttp.abc import AbstractView
-from aiohttp.web import Request
 from limits.aio.storage import MemoryStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 
@@ -31,7 +29,7 @@ class Limiter:
     def __init__(
         self,
         keyfunc: KeyFunc,
-        exempt_ips: set[str] | None = None,
+        exempt_ips: Union[set[str], None] = None,
         error_handler: ErrorHandler | None = None
     ) -> None:
         self.exempt_ips = exempt_ips or set()
@@ -44,9 +42,9 @@ class Limiter:
         self,
         ratelimit: str,
         keyfunc: KeyFunc | None = None,
-        exempt_ips: set[str] | None = None,
+        exempt_ips: Union[set[str], None] = None,
         error_handler: ErrorHandler | None = None,
-        path_id: str | None = None
+        path_id: Union[str, None] = None
     ) -> Callable[[RouteHandler[ViewOrRequestT]], AsyncHandler[ViewOrRequestT]]:
         def wrapper(func: RouteHandler[ViewOrRequestT]) -> AsyncHandler[ViewOrRequestT]:
             return BaseRateLimitDecorator(

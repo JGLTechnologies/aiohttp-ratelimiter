@@ -6,7 +6,7 @@ import json
 import sys
 
 from collections.abc import Callable, Awaitable
-from typing import TypeVar
+from typing import TypeVar, Union
 
 from aiohttp.abc import AbstractView
 from aiohttp.web import Request, Response, StreamResponse
@@ -32,7 +32,7 @@ ViewOrRequestT = TypeVar("ViewOrRequestT", bound="AbstractView | Request")
 Callback: TypeAlias = "Callable[P, Awaitable[R]] | Callable[P, R]"
 AsyncHandler: TypeAlias = "Callable[[ViewOrRequestT], Awaitable[StreamResponse]]"
 RouteHandler: TypeAlias = "Callback[[ViewOrRequestT], StreamResponse]"
-ErrorHandler: TypeAlias = "Callback[[Request, RateLimitExceeded], Allow | StreamResponse]"
+ErrorHandler: TypeAlias = "Callback[[Request, RateLimitExceeded], Union[Allow, StreamResponse]]"
 KeyFunc: TypeAlias = "Callback[[Request], str]"
 
 
@@ -62,7 +62,7 @@ class BaseRateLimitDecorator:
     def __init__(
         self,
         db: Storage,
-        path_id: str | None,
+        path_id: Union[str, None],
         keyfunc: KeyFunc,
         moving_window: MovingWindowRateLimiter,
         ratelimit: str,

@@ -7,7 +7,6 @@ name = "aiohttp-ratelimiter"
 description = "A simple rate limiter for aiohttp.web"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.7"
-license = {file = "LICENSE"}
 authors = [
     { name = "George Luca", email = "gluca@jgltechnologies.com" },
 ]
@@ -15,7 +14,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Framework :: aiohttp",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Typing :: Typed"
 ]
